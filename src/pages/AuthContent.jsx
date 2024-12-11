@@ -106,8 +106,23 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
+  const cancelAccount = () => {
+    localStorage.clear();
+    setAuthState({
+      name: null,
+      userType: null,
+      email: null,
+      userId: null,
+      companyCode: null,
+      companyType: null,
+      companyName: null,
+      ceoName: null,
+      companyAddress: null,
+    });
+  }
+
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, cancelAccount }}>
       {children}
     </AuthContext.Provider>
   );

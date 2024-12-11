@@ -8,6 +8,8 @@ const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
 const ProfileEdit = () => {
   const navigate = useNavigate();
 
+  const {cancelAccount} = useAuth();
+
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -71,10 +73,8 @@ const ProfileEdit = () => {
   
         const result = await response.json();
         alert("비밀번호가 정상적으로 변경되었습니다. \n다시 로그인해주세요.");
-  
-        // 직접 로그아웃 처리
-        localStorage.removeItem("token"); // 토큰 삭제
         navigate("/auth/sign-in"); // 로그인 페이지로 이동
+        cancelAccount();
       } catch (error) {
         console.error("비밀번호 변경 중 오류:", error.message);
       } finally {

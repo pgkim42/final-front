@@ -28,7 +28,7 @@ const OAuthCallback = () => {
         localStorage.setItem("type", type);
 
         // AuthContext 상태 업데이트
-        login(name, type, email, userCode);
+        login(name, type, email, userCode, token);
 
         // 메시지는 처음 한 번만 출력
         alert(`${name} 님 로그인을 환영합니다!`);

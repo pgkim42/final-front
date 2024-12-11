@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContent';
@@ -17,10 +17,15 @@ const JobseekerMyPage = () => {
     companyName,
     ceoName,
     companyAddress,
+    cancelAccount,
   } = useAuth(); // 변경된 AuthContext에서 각 필드를 가져옴
 
   const navigate = useNavigate();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // 비밀번호 확인 모달 상태
+  const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false); // 회원탈퇴 모달 상태
+  const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false); // 소셜 회원탈퇴 모달 상태
+  const [isChecked, setIsChecked] = useState(false); // 체크박스 상태
+  const [userInput, setUserInput] = useState(""); // 사용자 입력
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -62,53 +67,103 @@ const JobseekerMyPage = () => {
     }
   };
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
+  const handleOpenPasswordModal = () => setIsPasswordModalOpen(true);
+  const handleClosePasswordModal = () => {
+    setPassword("");
+    setError("");
+    setIsPasswordModalOpen(false);
   };
 
-  const resetModalState = () => {
-    setPassword('');
-    setError('');
+  const handleOpenRemoveModal = () => setIsRemoveModalOpen(true);
+  const handleCloseRemoveModal = () => {
+    setPassword("");
+    setError("");
+    setIsRemoveModalOpen(false);
   };
 
-  const handleCloseModal = () => {
-    resetModalState();
-    setIsModalOpen(false);
+  const handleOpenSocialRemoveModal = () => setIsSocialRemoveModalOpen(true);
+  const handleCloseSocialRemoveModal = () => {
+    setIsChecked(false);
+    setUserInput("");
+    setError("");
+    setIsSocialRemoveModalOpen(false);
   };
 
   const handlePasswordSubmit = async (e) => {
     if (e) e.preventDefault();
-  
+
     try {
-      const token = localStorage.getItem('token');
-      console.log("토큰값 : " , token);
-      
+      const token = localStorage.getItem("token");
+      console.log("토큰값:", token);
+
       if (!token) {
-        alert('로그인이 필요합니다.');
-        navigate('/auth/sign-in'); // 로그인 페이지로 이동
+        alert("로그인이 필요합니다.");
+        navigate("/auth/sign-in");
         return;
       }
-  
-      const response = await fetch('http://localhost:8080/api/v1/check-password', {
-        method: 'POST',
+
+      const response = await fetch("http://localhost:8080/api/v1/check-password", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ password }), // 비밀번호 입력값 전송
+        body: JSON.stringify({ password }),
       });
-  
+
       const data = await response.json();
-  
-      if (response.ok && data.result === 'success') {
-        alert('비밀번호 확인 완료');
-        navigate('/profile/edit'); // 프로필 수정 페이지로 이동
+
+      if (response.ok && data.result === "success") {
+        alert("비밀번호 확인 완료");
+        navigate("/profile/edit");
       } else {
-        setError(data.message || '비밀번호가 올바르지 않습니다.');
+        setError(data.message || "비밀번호가 올바르지 않습니다.");
       }
     } catch (error) {
-      console.error('비밀번호 확인 중 오류:', error);
-      setError('서버 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error("비밀번호 확인 중 오류:", error);
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+  };
+
+  const handleRemoveSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        navigate("/auth/sign-in");
+        return;
+      }
+
+      const endpoint = userType === "kakao" || userType === "naver"
+        ? "http://localhost:8080/api/v1/social-remove" // 소셜 회원 탈퇴
+        : "http://localhost:8080/api/v1/remove"; // 일반 회원 탈퇴
+
+      const requestBody = JSON.stringify({
+        userId,
+        ...(userType !== "kakao" && userType !== "naver" && { password }), // 비밀번호는 일반 회원만 필요
+      });
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: requestBody,
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        cancelAccount();
+        alert("회원 탈퇴가 완료되었습니다.");
+        navigate("/");
+      } else {
+        setError(data.message || "회원 탈퇴에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("회원 탈퇴 중 오류 발생:", err);
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -134,9 +189,19 @@ const JobseekerMyPage = () => {
               <Email>이메일: {email}</Email>
             </ProfileInfo>
           </ProfileCard>
+
           {['dev', 'company'].includes(userType) && (
-            <EditButton onClick={handleOpenModal}>비밀번호 수정</EditButton>
+            <EditButton onClick={handleOpenPasswordModal}>비밀번호 수정</EditButton>
           )}
+
+          {['dev', 'company'].includes(userType) && (
+            <RemoveButton onClick={handleOpenRemoveModal}>회원 탈퇴</RemoveButton>
+          )}
+
+          {['kakao', 'naver'].includes(userType) && (
+            <RemoveSocialButton onClick={handleOpenSocialRemoveModal}>회원 탈퇴</RemoveSocialButton>
+          )}
+
         </Section>
 
         {userType === "company" && (
@@ -186,39 +251,147 @@ const JobseekerMyPage = () => {
         )}
       </Grid>
 
+
       {/* 비밀번호 확인 모달 */}
       <Modal
-        isOpen={isModalOpen}
-        onRequestClose={handleCloseModal}
+        isOpen={isPasswordModalOpen}
+        onRequestClose={handleClosePasswordModal}
         contentLabel="비밀번호 확인"
         style={{
-          overlay: { backgroundColor: 'rgba(0, 0, 0, 0.5)' },
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
           content: {
-            width: '400px',
-            height: 'fit-content',
-            maxHeight: '300px',
-            margin: 'auto',
-            padding: '20px',
-            borderRadius: '8px',
-            overflow: 'hidden',
+            width: "400px",
+            height: "fit-content",
+            maxHeight: "300px",
+            margin: "auto",
+            padding: "20px",
+            borderRadius: "8px",
+            overflow: "hidden",
           },
         }}
       >
         <ModalContent>
           <h2>비밀번호 확인</h2>
-          {/* 폼으로 감싸고 onSubmit 사용 */}
           <form onSubmit={handlePasswordSubmit}>
             <PasswordInput
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력하세요"
+              autoFocus
+              required
             />
             {error && <ErrorMessage>{error}</ErrorMessage>}
             <ButtonGroup>
               <SubmitButton type="submit">확인</SubmitButton>
-              <CancelButton type="button" onClick={handleCloseModal}>취소</CancelButton>
+              <CancelButton type="button" onClick={handleClosePasswordModal}>
+                취소
+              </CancelButton>
             </ButtonGroup>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* 회원탈퇴 확인 모달 */}
+      <Modal
+        isOpen={isRemoveModalOpen}
+        onRequestClose={handleCloseRemoveModal}
+        contentLabel="회원탈퇴"
+        style={{
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
+          content: {
+            width: "400px",
+            height: "fit-content",
+            maxHeight: "300px",
+            margin: "auto",
+            padding: "20px",
+            borderRadius: "8px",
+            overflow: "hidden",
+          },
+        }}
+      >
+        <ModalContent>
+          <h2>회원 탈퇴</h2>
+          <form onSubmit={handleRemoveSubmit}>
+            <PasswordInput
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="비밀번호를 입력하세요"
+              autoFocus
+              required
+            />
+            {error && <ErrorMessage>{error}</ErrorMessage>}
+            <ButtonGroup>
+              <SubmitButton type="submit">탈퇴 확인</SubmitButton>
+              <CancelButton type="button" onClick={handleCloseRemoveModal}>
+                취소
+              </CancelButton>
+            </ButtonGroup>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* 소셜회원탈퇴 확인 모달 */}
+      <Modal
+        isOpen={isSocialRemoveModalOpen}
+        onRequestClose={handleCloseSocialRemoveModal}
+        contentLabel="소셜 회원탈퇴"
+        style={{
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
+          content: {
+            width: "520px", // 기존 크기보다 약 30% 증가
+            height: "fit-content",
+            maxHeight: "90vh",
+            margin: "auto",
+            padding: "30px", // 더 넓은 여백
+            borderRadius: "12px",
+            overflowY: "auto",
+          },
+        }}
+      >
+        <ModalContent>
+          <h2>소셜 회원 탈퇴</h2>
+          <form onSubmit={handleRemoveSubmit}>
+            <div>
+              <CheckboxContainer>
+                <Checkbox
+                  type="checkbox"
+                  id="socialConsent"
+                  checked={isChecked}
+                  onChange={() => setIsChecked(!isChecked)}
+                />
+                <Label htmlFor="socialConsent">
+                  회원 탈퇴를 진행하여 통합 로그인 계정에 <br /> 귀속된 모든 정보를 삭제하는데 동의합니다.
+                  <br /><br />
+                  {userId}/탈퇴합니다 를 입력하세요
+                </Label>
+              </CheckboxContainer>
+              <InputContainer>
+                <PasswordInput
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder={`${userId}/탈퇴합니다 를 입력하세요`} // 변경
+                  required
+                />
+              </InputContainer>
+              {userInput && userInput !== `${userId}/탈퇴합니다` && (
+                <ErrorMessage>입력하신 내용이 정확하지 않습니다.</ErrorMessage>
+              )}
+              {error && <ErrorMessage>{error}</ErrorMessage>}
+              <ButtonGroup>
+                <SubmitButton
+                  type="submit"
+                  disabled={!isChecked || userInput !== `${userId}/탈퇴합니다`}
+                >
+                  회원 탈퇴
+                </SubmitButton>
+                <CancelButton type="button" onClick={handleCloseSocialRemoveModal}>
+                  취소
+                </CancelButton>
+              </ButtonGroup>
+            </div>
           </form>
         </ModalContent>
       </Modal>
@@ -231,6 +404,34 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+`;
+
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center; /* 수직 가운데 정렬 */
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #fff; /* 배경색 */
+  border: 1px solid #ddd; /* 테두리 */
+  border-radius: 8px; /* 모서리 둥글게 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* 그림자 */
+`;
+
+const InputContainer = styled.div`
+  margin-bottom: 20px;
+`;
+
+const Checkbox = styled.input`
+  margin-right: 10px; /* 체크박스와 텍스트 간격 */
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+`;
+
+const Label = styled.label`
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.5;
 `;
 
 const Title = styled.h1`
@@ -296,12 +497,46 @@ const EditButton = styled.button`
   border: 1px solid #3498db;
   border-radius: 6px;
   background: white;
-  color: #3498db;
+  color: #3498db; 
   cursor: pointer;
   text-decoration: none;
 
   &:hover {
     background: #f7f9fc;
+  }
+`;
+
+const RemoveButton = styled.button`
+  margin: 10px 0 0 10px;
+  padding: 10px;
+  border: 1px solid #3498db;
+  border-radius: 6px;
+  background: white;
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s, color 0.3s;
+
+  &:hover {
+    background: #e35946;
+    color: #000000;
+  }
+`;
+
+const RemoveSocialButton = styled.button`
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #3498db;
+  border-radius: 6px;
+  background: white;
+  color: #3498db;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.3s, color 0.3s;
+
+  &:hover {
+    background: #e35946;
+    color: #000000;
   }
 `;
 
@@ -378,7 +613,7 @@ const ModalContent = styled.div`
 `;
 
 const PasswordInput = styled.input`
-  width: 90%;
+  width: 95%;
   padding: 10px;
   margin: 10px 0;
   border: 1px solid #ccc;
@@ -403,6 +638,8 @@ const SubmitButton = styled.button`
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  opacity: ${props => props.disabled ? 0.6 : 1};
+  pointer-events: ${props => props.disabled ? 'none' : 'auto'};
 
   &:hover {
     background: #2980b9;
