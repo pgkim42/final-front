@@ -10,8 +10,8 @@ import Footer from './components/Footer';
 import SignIn from './features/user/view/Authentication/SignIn';
 import SignUp from './features/user/view/Authentication/SignUp';
 import OAuthCallback from './pages/OAuthCallback';
-import JobseekerMyPage from './pages/JobseekerMyPage';
-import ProfileEdit from './pages/ProfileEdit';
+import UserMyPage from './features/user/view/MyPage/UserMyPage';
+import ProfileEdit from './features/user/view/MyPage/UserProfileEdit';
 
 // Pages
 import Home from './pages/Home';
@@ -74,7 +74,7 @@ function App() {
           <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
           <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyProfile />} />
           <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
-          <Route path={ROUTES.PROFILE.MY_PAGE} element={<JobseekerMyPage />} />
+          <Route path={ROUTES.PROFILE.MY_PAGE} element={<UserMyPage />} />
           <Route path={ROUTES.PROFILE.EDIT} element={<ProfileEdit />} />
 
           {/* <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyDetail />} /> */}
