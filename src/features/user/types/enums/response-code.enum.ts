@@ -4,7 +4,7 @@ enum ResponseCode {
   VALIDATION_FAIL = "VF",
 
   DUPLICATE_ID = "DI",
-  DUPLICATE_NICKNAME = "DN",
+  DUPLICATE_EMAIL = "DE",
 
   SIGN_IN_FAIL = "SF",
   CERTIFICATION_FAIL = "CF",

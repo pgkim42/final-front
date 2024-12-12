@@ -3,7 +3,7 @@ enum ResponseMessage {
   VALIDATION_FAIL = "Validation failed.",
   
   DUPLICATE_ID = "Duplicate Id.",
-  DUPLICATE_NICKNAME = "Duplicate Nickname.",
+  DUPLICATE_EMAIL = "Duplicate Email.",
 
   SIGN_IN_FAIL = "Login information mismatch.",
   CERTIFICATION_FAIL = "Certification failed.",

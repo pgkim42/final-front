@@ -380,6 +380,9 @@ const JobseekerMyPage = () => {
                   onChange={() => setIsChecked(!isChecked)}
                 />
               </CheckboxContainer>
+                <Label htmlFor="socialConsent">
+                  {userId}/탈퇴합니다 를 입력하세요
+                </Label>
               <InputContainer>
                 <PasswordInput
                   type="text"

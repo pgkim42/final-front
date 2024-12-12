@@ -1,20 +1,20 @@
 import InputBox from '../../../component/InputBox';
 import React, { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react'
 import './style.css';
-import { useNavigate , useSearchParams} from 'react-router-dom';
-import { CheckCertificationRequest, EmailCertificationRequest, idCheckedRequest, SignUpRequest } from '../../../apis/request/auth';
-import { checkCertificationRequest, emailCertificationRequest, idCheckRequest, signUpRequest, SNS_SIGN_IN_URL } from '../../../apis';
-import { CheckCertificationResponse, EmailCertificationResponse, IdCheckedResponse, SignUpResponse } from '../../../apis/response/auth';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCertificationRequest, EmailCertificationRequest, EmailCheckRequest, idCheckedRequest, SignUpRequest } from '../../../apis/request/auth';
+import { checkCertificationRequest, emailCertificationRequest, emailCheckRequest, idCheckRequest, signUpRequest, SNS_SIGN_IN_URL } from '../../../apis';
+import { CheckCertificationResponse, EmailCertificationResponse, EmailCheckResponse, IdCheckedResponse, SignUpResponse } from '../../../apis/response/auth';
 import { ResponseCode } from '../../../types/enums';
 import { ResponseBody } from '../../../types';
 import SearchIcon from '@mui/icons-material/Search';
+import styled from 'styled-components';
 
 declare global {
   interface Window {
     daum: any;
   }
 }
-
 
 export default function SignUp() { 
 
@@ -69,11 +69,15 @@ export default function SignUp() {
   const [certificationNumberMessage, setCertificationNumberMessage] = useState<string>('');
 
   const [isIdCheck, setIdCheck] = useState<boolean>(false);
+  const [isEmailCheck, setIsEmailCheck] = useState<boolean>(false); // 이메일 중복 체크 상태
   const [isCertificationCheck, setCertificationCheck] = useState<boolean>(false);
 
-  const signUpButtonClass = userId && password && passwordCheck && name && email && certificationNumber ? 'primary-button-lg' : 'disable-button-lg';
+  const [isEmailUnique, setIsEmailUnique] = useState<boolean>(false); // 이메일 중복 여부
+  const [isEmailChecking, setIsEmailChecking] = useState<boolean>(false); // 이메일 중복 체크 중 여부
 
-  const emailPattern = /^[a-zA-Z0-9_]*@([-.]?[a-zA-Z0-9_])*\.([a-zA-Z]{2,4})$/;
+  const signUpButtonClass = userId && password && passwordCheck && name && email && certificationNumber && isIdCheck && isEmailCheck && isCertificationCheck ? 'primary-button-lg' : 'disable-button-lg';
+
+  const emailPattern = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
   const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
   const namePattern = /^[가-힣]{2,8}$/;
 
@@ -94,7 +98,33 @@ export default function SignUp() {
     setIdError(false);
     setIdMessage('사용 가능한 아이디 입니다.');
     setIdCheck(true);
+  }
 
+  const emailCheckResponse = (responseBody: ResponseBody<EmailCheckResponse>) => {
+    if(!responseBody) return;
+    const { code } = responseBody;
+
+    if(code === ResponseCode.VALIDATION_FAIL) {
+      alert('이메일을 입력하세요.');
+      return;
+    }
+    if(code === ResponseCode.DUPLICATE_EMAIL) {
+      setEmailError(true);
+      setEmailMessage('이미 사용중인 이메일 입니다.');
+      setIsEmailUnique(false);
+      setIsEmailCheck(false);
+      return;
+    }
+    if(code === ResponseCode.DATABASE_ERROR) {
+      alert('데이터베이스 오류입니다.');
+      return;
+    }
+    if(code !== ResponseCode.SUCCESS) return ;
+
+    setEmailError(false);
+    setEmailMessage('사용 가능한 이메일입니다.');
+    setIsEmailUnique(true);
+    setIsEmailCheck(true);
   }
 
   const emailCertificationResponse = (responseBody: ResponseBody<EmailCertificationResponse>) => {
@@ -102,16 +132,10 @@ export default function SignUp() {
     const { code } = responseBody;
 
     if(code === ResponseCode.VALIDATION_FAIL) alert('아이디, 이메일, 닉네임 모두 입력하세요.');
-    if(code === ResponseCode.DUPLICATE_ID) {
-      setIdError(true);
-      setIdMessage('이미 사용중인 아이디 입니다.');
-      setIdCheck(false);
-    }
     if(code === ResponseCode.MAIL_FAIL) alert('이메일 전송에 실패했습니다.');
     if(code === ResponseCode.DATABASE_ERROR) alert('데이터베이스 오류입니다.');
     if(code !== ResponseCode.SUCCESS) return ;
 
-    setEmailError(false);
     setEmailMessage('인증번호가 전송되었습니다.');
   };
 
@@ -132,7 +156,6 @@ export default function SignUp() {
     setCertificationNumberError(false);
     setCertificationNumberMessage('인증번호가 확인되었습니다.');
     setCertificationCheck(true);
-
   }
 
   const signUpResponse = (responseBody: ResponseBody<SignUpResponse>) => {
@@ -161,7 +184,6 @@ export default function SignUp() {
     if(code !== ResponseCode.SUCCESS) return ;
 
     navigate('/auth/sign-in');
-
   }
 
   // onChangeHandler
@@ -201,13 +223,15 @@ export default function SignUp() {
     } else {
         setNameError(false);
     }
-};
+  };
 
   const onEmailChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
 
     const {value} = event.target;
     setEmail(value);
     setEmailMessage('');
+    setIsEmailUnique(false);
+    setIsEmailCheck(false);
 
   };
 
@@ -230,24 +254,54 @@ export default function SignUp() {
 
   }
 
-  const onEmailButtonClickHandler = () => {
-
-    if(!userId || !email) return;
-
-    const checkedEmail = emailPattern.test(email);
-
-    if(!checkedEmail) {
+  const onEmailCheckHandler = async () => {
+    if (!email) {
       setEmailError(true);
-      setEmailMessage('이메일 형식이 아닙니다.');
+      setEmailMessage('이메일을 입력해주세요.');
       return;
     }
 
-    const requestBody: EmailCertificationRequest = { userId, email };
-    emailCertificationRequest(requestBody).then(emailCertificationResponse);
+    if (!emailPattern.test(email)) {
+      setEmailError(true);
+      setEmailMessage('유효한 이메일 형식이 아닙니다.');
+      return;
+    }
 
-    setEmailError(false);
-    setEmailMessage('이메일로 인증번호 전송중...');
+    setIsEmailChecking(true);
+    try {
+      const requestBody: EmailCheckRequest = { userId, email };
+      const response = await emailCheckRequest(requestBody);
+      emailCheckResponse(response);
+    } catch (error) {
+      console.error('이메일 중복 체크 중 오류:', error);
+      alert('아이디와 이메일을 입력해주세요');
+    } finally {
+      setIsEmailChecking(false);
+    }
+  };
 
+  const onEmailCertificationHandler = async () => {
+    if (!isEmailUnique) {
+      alert('이메일 중복 확인을 먼저 해주세요.');
+      return;
+    }
+
+    try {
+      const requestBody: EmailCertificationRequest = { userId, email };
+      await emailCertificationRequest(requestBody);
+      setEmailMessage('인증번호가 전송되었습니다.');
+    } catch (error) {
+      console.error('이메일 인증 중 오류:', error);
+      alert('이메일 인증 중 오류가 발생했습니다.');
+    }
+  };
+
+  const onEmailButtonClickHandler = () => {
+    if (isEmailUnique) {
+      onEmailCertificationHandler();
+    } else {
+      onEmailCheckHandler();
+    }
   };
 
   const onCertificationNumberButtonClickHandler = () => {
@@ -255,7 +309,9 @@ export default function SignUp() {
     if(!userId || !name || !email || !certificationNumber) return;
 
     const requestBody: CheckCertificationRequest = { userId, email, certificationNumber };
-    checkCertificationRequest(requestBody).then(checkCertificationResponse);
+    checkCertificationRequest(requestBody).then(checkCertificationResponse).catch(err => {
+      console.error('인증번호 확인 중 오류:', err);
+    });
 
   }
 
@@ -265,6 +321,11 @@ export default function SignUp() {
 
     if(!isIdCheck) {
       alert('중복 확인은 필수입니다.');
+      return;
+    }
+
+    if(!isEmailCheck) {
+      alert('이메일 중복 확인을 해주세요.');
       return;
     }
 
@@ -280,7 +341,6 @@ export default function SignUp() {
       setPasswordCheckMessage('비밀번호가 일치하지 않습니다.');
       return;
     }
-
 
     if(!isCertificationCheck) {
       alert('이메일 인증은 필수입니다.');
@@ -304,19 +364,7 @@ export default function SignUp() {
     };
 
     signUpRequest(requestBody)
-    .then((response) => {
-      if (!response) {
-        alert('서버로부터 유효한 응답을 받지 못했습니다.');
-        return;
-      }
-  
-      if (response.code === ResponseCode.SUCCESS) {
-        alert('회원가입에 성공했습니다.');
-        navigate('/auth/sign-in');
-      } else {
-        alert(`회원가입 실패: ${response.message}`);
-      }
-    })
+    .then(signUpResponse)
     .catch((error) => {
       alert('회원가입 중 오류가 발생했습니다.');
       console.error(error);
@@ -400,28 +448,28 @@ export default function SignUp() {
   };
 
   return (
-    <div id='sign-up-wrapper'>
+    <SignUpWrapper id='sign-up-wrapper'>
       <div className='sign-up-image'></div>
-      <div className='sign-up-container'>
-        <div className='sign-up-box'>
-        <div className='sign-up-title'>
-          {!isCompany ? '회원가입 서비스' : '기업 회원가입 서비스'}
-        </div>
-          <div className='sign-up-content-box'>
+      <SignUpContainer className='sign-up-container'>
+        <SignUpBox className='sign-up-box'>
+          <SignUpTitle className='sign-up-title'>
+            {!isCompany ? '회원가입 서비스' : '기업 회원가입 서비스'}
+          </SignUpTitle>
+          <SignUpContentBox className='sign-up-content-box'>
             {!isCompany && (
               <>
-                <div className='sign-up-content-sns-sign-in-box'>
-                  <div className='sign-up-content-sns-sign-in-title'>{'SNS 회원가입'}</div>
-                  <div className='sign-up-content-sns-sign-in-button-box'>
-                    <div className='kakao-sign-in-button' onClick={() => onSnsSignInButtonClickHandler('kakao')}></div>
-                    <div className='naver-sign-in-button' onClick={() => onSnsSignInButtonClickHandler('naver')}></div>
-                  </div>
-                </div>
-                <div className='sign-up-content-divider'></div>
+                <SNSSignInBox className='sign-up-content-sns-sign-in-box'>
+                  <SNSSignInTitle className='sign-up-content-sns-sign-in-title'>{'SNS 회원가입'}</SNSSignInTitle>
+                  <SNSSignInButtonBox className='sign-up-content-sns-sign-in-button-box'>
+                    <KakaoSignInButton className='kakao-sign-in-button' onClick={() => onSnsSignInButtonClickHandler('kakao')}></KakaoSignInButton>
+                    <NaverSignInButton className='naver-sign-in-button' onClick={() => onSnsSignInButtonClickHandler('naver')}></NaverSignInButton>
+                  </SNSSignInButtonBox>
+                </SNSSignInBox>
+                <Divider className='sign-up-content-divider'></Divider>
               </>
             )}
-  
-            <div className='sign-up-content-input-box'>
+
+            <InputContainerBox className='sign-up-content-input-box'>
               <InputBox
                 ref={idRef}
                 title='아이디'
@@ -449,7 +497,7 @@ export default function SignUp() {
               <InputBox
                 ref={passwordCheckRef}
                 title='비밀번호 확인'
-                placeholder='비밀번호를 입력해주세요'
+                placeholder='비밀번호를 다시 입력해주세요'
                 type='password'
                 value={passwordCheck}
                 onChange={onPasswordCheckChangeHandler}
@@ -477,10 +525,14 @@ export default function SignUp() {
                 onChange={onEmailChangeHandler}
                 isErrorMessage={isEmailError}
                 message={emailMessage}
-                buttonTitle='이메일 인증'
-                onButtonClick={onEmailButtonClickHandler}
+                // 버튼은 이메일 중복 체크와 인증을 위한 버튼으로 변경
+                buttonTitle={isEmailUnique ? '이메일 인증' : '이메일 중복 체크'}
+                onButtonClick={isEmailUnique ? onEmailCertificationHandler : onEmailCheckHandler}
                 onKeyDown={onEmailKeyDownHandler}
+                disabled={isEmailChecking} // 이메일 중복 체크 진행 중일 때만 비활성화
               />
+              {isEmailChecking && <LoadingSpinner />}
+              {/* 인증번호 입력 필드 */}
               <InputBox
                 ref={certificationNumberRef}
                 title='인증번호'
@@ -493,10 +545,11 @@ export default function SignUp() {
                 buttonTitle='인증 확인'
                 onButtonClick={onCertificationNumberButtonClickHandler}
                 onKeyDown={onCertificationNumberKeyDownHandler}
+                disabled={!isEmailUnique} // 이메일 중복 체크가 완료되면 활성화
               />
-  
+
               {isCompany && (
-                <div className="company-sign-up-box">
+                <CompanySignUpBox className="company-sign-up-box">
                   <InputBox
                     title="사업자 등록번호"
                     placeholder="사업자 등록번호를 입력해주세요"
@@ -504,9 +557,9 @@ export default function SignUp() {
                     value={companyCode}
                     onChange={(e) => setCompanyCode(e.target.value)}
                   />
-                  <div className="input-box">
-                    <div className="input-box-title">기업 형태</div>
-                    <select
+                  <InputBoxWrapper className="input-box">
+                    <InputBoxTitle className="input-box-title">기업 형태</InputBoxTitle>
+                    <Select
                       className="input-box-select"
                       value={companyType}
                       onChange={(e) => setCompanyType(e.target.value)}
@@ -521,8 +574,8 @@ export default function SignUp() {
                       <option>국내 공공기관·공기업</option>
                       <option>비영리단체·협회·교육재단</option>
                       <option>외국 기관·비영리기구·단체</option>
-                    </select>
-                  </div>
+                    </Select>
+                  </InputBoxWrapper>
                   <InputBox
                     title="회사 이름"
                     placeholder="회사 이름을 입력해주세요"
@@ -538,12 +591,12 @@ export default function SignUp() {
                     onChange={(e) => setCeoName(e.target.value)}
                   />
                   {/* 주소 찾기 버튼 */}
-                  <div className="input-box">
-                    <div className="input-box-title">회사 주소 찾기</div>
-                    <button className='input-box-button-address' onClick={handleDaumPostcode}>
+                  <InputBoxWrapper className="input-box">
+                    <InputBoxTitle className="input-box-title">회사 주소 찾기</InputBoxTitle>
+                    <AddressSearchButton className='input-box-button-address' onClick={handleDaumPostcode}>
                       우편번호 찾기<SearchIcon />
-                    </button>
-                  </div>
+                    </AddressSearchButton>
+                  </InputBoxWrapper>
 
                   <InputBox
                     title="우편번호"
@@ -584,26 +637,162 @@ export default function SignUp() {
                     onChange={(e) => setCompanyExtraAddress(e.target.value)}
                     readOnly={true}
                   />
-                </div>
+                </CompanySignUpBox>
               )}
-            </div>
-            <div className='sign-up-content-button-box'>
-              <div
+            </InputContainerBox>
+            <ButtonBox className='sign-up-content-button-box'>
+              <SignUpButton
                 className={`${signUpButtonClass} full-width`}
                 onClick={onSignUpButtonClickHandler}
               >
                 {'회원가입'}
-              </div>
-              <div
+              </SignUpButton>
+              <SignInLink
                 className='text-link-lg full-width'
                 onClick={onSignInButtonClickHandler}
               >
                 {'로그인'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+              </SignInLink>
+            </ButtonBox>
+          </SignUpContentBox>
+        </SignUpBox>
+      </SignUpContainer>
+    </SignUpWrapper>
   );
 }
+
+const SignUpWrapper = styled.div`
+  display: flex;
+  /* 기타 스타일 */
+`;
+
+const SignUpContainer = styled.div`
+  /* 스타일 */
+`;
+
+const SignUpBox = styled.div`
+  /* 스타일 */
+`;
+
+const SignUpTitle = styled.div`
+  /* 스타일 */
+`;
+
+const SignUpContentBox = styled.div`
+  /* 스타일 */
+`;
+
+const SNSSignInBox = styled.div`
+  /* 스타일 */
+`;
+
+const SNSSignInTitle = styled.div`
+  /* 스타일 */
+`;
+
+const SNSSignInButtonBox = styled.div`
+  /* 스타일 */
+`;
+
+const KakaoSignInButton = styled.div`
+  /* 스타일 */
+`;
+
+const NaverSignInButton = styled.div`
+  /* 스타일 */
+`;
+
+const Divider = styled.div`
+  /* 스타일 */
+`;
+
+const InputContainerBox = styled.div`
+  /* 스타일 */
+`;
+
+const CompanySignUpBox = styled.div`
+  /* 스타일 */
+`;
+
+const InputBoxWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+`;
+
+const InputBoxTitle = styled.div`
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+`;
+
+const Select = styled.select`
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+`;
+
+const AddressSearchButton = styled.button`
+  padding: 0.5rem 1rem;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
+const ButtonBox = styled.div`
+  /* 스타일 */
+`;
+
+const SignUpButton = styled.div`
+  /* 스타일 */
+  cursor: pointer;
+
+  &.disable-button-lg {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  &.primary-button-lg {
+    background-color: #3498db;
+    color: white;
+  }
+`;
+
+const SignInLink = styled.div`
+  /* 스타일 */
+  cursor: pointer;
+  color: #3498db;
+  text-align: center;
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
+const LoadingSpinner = styled.div`
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 2s linear infinite;
+  margin-left: 10px;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;

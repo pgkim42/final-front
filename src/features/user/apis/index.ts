@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
-import { CheckCertificationRequest, EmailCertificationRequest,  SignInRequest, SignUpRequest } from "./request/auth";
-import { CheckCertificationResponse, EmailCertificationResponse, IdCheckedResponse, SignInResponse, SignUpResponse } from "./response/auth";
+import { CheckCertificationRequest, EmailCertificationRequest, EmailCheckRequest, SignInRequest, SignUpRequest} from "./request/auth";
+import { CheckCertificationResponse, EmailCertificationResponse, IdCheckedResponse, EmailCheckResponse, SignInResponse, SignUpResponse} from "./response/auth";
 import { Response } from "./response";
 import idCheckedRequest from "./request/auth/id-check.request";
 
@@ -22,6 +22,7 @@ export const SNS_SIGN_IN_URL = (type: 'kakao' | 'naver') => `${API_DOMAIN}/auth/
 const SIGN_IN_URL = () => `${API_DOMAIN}/auth/sign-in`;
 const SIGN_UP_URL = () => `${API_DOMAIN}/auth/sign-up`;
 const ID_CHECK_URL = () => `${API_DOMAIN}/auth/id-check`;
+const EMAIL_CHECK_API_URL = () => `${API_DOMAIN}/auth/email-check`;
 const EMAIL_CERTIFICATION_URL = () => `${API_DOMAIN}/auth/email-certification`;
 const CHECK_CERTIFICATION_URL = () => `${API_DOMAIN}/auth/check-certification`;
 
@@ -50,6 +51,17 @@ export const idCheckRequest = async (requestBody: idCheckedRequest) => {
       
   return result;
   
+};
+
+export const emailCheckRequest = async (requestBody: EmailCheckRequest): Promise<EmailCheckResponse> => {
+  try {
+    const response = await axios.post<EmailCheckResponse>(EMAIL_CHECK_API_URL(), requestBody);
+    return response.data;
+  } catch (error) {
+    console.error('이메일 중복 체크 요청 중 오류 발생:', error);
+    // 오류 응답을 처리할 수 있도록 에러를 던집니다.
+    throw error;
+  }
 };
 
 export const emailCertificationRequest = async (requestBody: EmailCertificationRequest) => {
