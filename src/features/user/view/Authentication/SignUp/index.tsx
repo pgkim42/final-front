@@ -551,13 +551,15 @@ export default function SignUp() {
                     type="text"
                     value={companyPostcode}
                     onChange={(e) => setCompanyPostcode(e.target.value)}
+                    readOnly={true}
                   />
                   <InputBox
                     title="도로명 주소"
                     placeholder="도로명주소"
                     type="text"
                     value={companyRoadAddress}
-                    onChange={(e) => setCompanyRoadAddress(e.target.value)}
+                    onChange={(e) => setCompanyRoadAddress(e.target.value)} 
+                    readOnly={true}
                   />
                   <InputBox
                     title="지번 주소"
@@ -565,6 +567,7 @@ export default function SignUp() {
                     type="text"
                     value={companyJibunAddress}
                     onChange={(e) => setCompanyJibunAddress(e.target.value)}
+                    readOnly={true}
                   />
                   <InputBox
                     title="상세 주소"
@@ -579,6 +582,7 @@ export default function SignUp() {
                     type="text"
                     value={companyExtraAddress}
                     onChange={(e) => setCompanyExtraAddress(e.target.value)}
+                    readOnly={true}
                   />
                 </div>
               )}

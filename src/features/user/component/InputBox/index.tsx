@@ -12,11 +12,12 @@ interface Props{
   onChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   onButtonClick?: () => void;
+  readOnly?: boolean; // readOnly 속성 추가
 }
 
 const InputBox = forwardRef<HTMLInputElement, Props>((props: Props, ref) => {
 
-  const { title, placeholder, type, value, isErrorMessage, buttonTitle, message, onChange, onKeyDown, onButtonClick } = props;
+  const { title, placeholder, type, value, isErrorMessage, buttonTitle, message, onChange, onKeyDown, onButtonClick, readOnly} = props;
 
   // 해당 버튼 클래스가 
   // 값이 없다면? input-box-button-disable 
@@ -31,7 +32,7 @@ const InputBox = forwardRef<HTMLInputElement, Props>((props: Props, ref) => {
       <div className='input-box-title'>{title}</div>
       <div className='input-box-content'>
           <div className='input-box-body'>
-            <input ref={ref} className='input-box-input' placeholder={placeholder} type={type} value={value} onChange={onChange} onKeyDown={onKeyDown}/>
+            <input ref={ref} className='input-box-input' placeholder={placeholder} type={type} value={value} onChange={onChange} onKeyDown={onKeyDown} readOnly={readOnly} aria-readonly={readOnly} />
             {buttonTitle !== undefined && onButtonClick !== undefined && <div className={buttonClass} onClick={onButtonClick}>{buttonTitle}</div>}
           </div>
           {message !== undefined && <div className={messageClass}>{message}</div>}
