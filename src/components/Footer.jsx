@@ -140,7 +140,7 @@ const Footer = () => {
         </FooterSection>
       </FooterContent>
       <Copyright>
-        © 2023 채용사이트. All rights reserved.
+        © 2024 채용사이트. All rights reserved.
       </Copyright>
     </FooterWrapper>
   );

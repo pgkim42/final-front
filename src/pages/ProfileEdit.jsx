@@ -6,19 +6,20 @@ import { useAuth } from './AuthContent';
 const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
 
 const ProfileEdit = () => {
-  const navigate = useNavigate();
 
-  const {cancelAccount} = useAuth();
-
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
+  const [loading, setLoading] = useState(false); // 로딩 상태 추가
+  const [activeSection, setActiveSection] = useState('profile');
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
 
-  const [errors, setErrors] = useState({});
-  const [serverError, setServerError] = useState("");
-  const [loading, setLoading] = useState(false); // 로딩 상태 추가
+  const navigate = useNavigate();
+  const { cancelAccount } = useAuth();
+
 
   const validateForm = () => {
     const newErrors = {};
@@ -38,7 +39,7 @@ const ProfileEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validateForm();
-  
+
     if (Object.keys(newErrors).length === 0) {
       setLoading(true);
       try {
@@ -48,7 +49,7 @@ const ProfileEdit = () => {
           navigate("/auth/sign-in");
           return;
         }
-  
+
         const response = await fetch("http://localhost:8080/api/v1/change-password", {
           method: 'POST',
           headers: {
@@ -60,7 +61,7 @@ const ProfileEdit = () => {
             newPassword: formData.newPassword,
           }),
         });
-  
+
         if (!response.ok) {
           const errorData = await response.json();
           if (errorData.message === "No permission") {
@@ -70,7 +71,7 @@ const ProfileEdit = () => {
           }
           throw new Error(errorData.message || "비밀번호 변경 중 문제가 발생했습니다.");
         }
-  
+
         const result = await response.json();
         alert("비밀번호가 정상적으로 변경되었습니다. \n다시 로그인해주세요.");
         navigate("/auth/sign-in"); // 로그인 페이지로 이동
@@ -84,86 +85,171 @@ const ProfileEdit = () => {
       setErrors(newErrors);
     }
   };
-  
+
   return (
-    <Container>
-      <Header>
-        <Title>비밀번호 수정</Title>
-        <SubTitle>회원님의 정보를 안전하게 수정하실 수 있습니다.</SubTitle>
-      </Header>
+    <>
+      <Title>비밀번호 수정</Title>
+      <Container>
+        <MainContent>
+          <Form onSubmit={handleSubmit}>
+            {activeSection === 'profile' ? (
+              <Section>
+                <SectionTitle>기본 정보</SectionTitle>
+                <FormGroup>
+                  <Label>이름</Label>
+                  <Input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    hasError={!!errors.name}
+                  />
+                  {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+                </FormGroup>
 
-      <Form onSubmit={handleSubmit}>
-        <Section>
-          <SectionTitle>비밀번호 변경</SectionTitle>
-          <FormGroup>
-            <Label>현재 비밀번호</Label>
-            <Input
-              type="password"
-              value={formData.currentPassword}
-              onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-              hasError={!!errors.currentPassword}
-            />
-            {errors.currentPassword && <ErrorMessage>{errors.currentPassword}</ErrorMessage>}
-          </FormGroup>
+                <FormGroup>
+                  <Label>이메일</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    hasError={!!errors.email}
+                  />
+                  {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+                </FormGroup>
 
-          <FormGroup>
-            <Label>새 비밀번호</Label>
-            <Input
-              type="password"
-              value={formData.newPassword}
-              onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-              hasError={!!errors.newPassword}
-            />
-            {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
-          </FormGroup>
+                <FormGroup>
+                  <Label>전화번호</Label>
+                  <Input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    hasError={!!errors.phone}
+                  />
+                  {errors.phone && <ErrorMessage>{errors.phone}</ErrorMessage>}
+                </FormGroup>
+              </Section>
+            ) : (
 
-          <FormGroup>
-            <Label>새 비밀번호 확인</Label>
-            <Input
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              hasError={!!errors.confirmPassword}
-            />
-            {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
-          </FormGroup>
-        </Section>
+              <Section>
+                <SectionTitle>비밀번호 변경</SectionTitle>
+                <FormGroup>
+                  <Label>현재 비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                    hasError={!!errors.currentPassword}
+                  />
+                  {errors.currentPassword && <ErrorMessage>{errors.currentPassword}</ErrorMessage>}
+                </FormGroup>
 
-        {serverError && <ErrorMessage>{serverError}</ErrorMessage>}
+                <FormGroup>
+                  <Label>새 비밀번호</Label>
+                  <Input
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                    hasError={!!errors.newPassword}
+                  />
+                  {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
+                </FormGroup>
 
-        <ButtonGroup>
-          <SaveButton type="submit" disabled={loading}>
-            {loading ? "저장 중..." : "저장하기"}
-          </SaveButton>
-          <CancelButton type="button" onClick={() => navigate("/mypage")}>
-            취소
-          </CancelButton>
-        </ButtonGroup>
-      </Form>
-    </Container>
+                <FormGroup>
+                  <Label>새 비밀번호 확인</Label>
+                  <Input
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    hasError={!!errors.confirmPassword}
+                  />
+                  {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
+                </FormGroup>
+              </Section>
+            )}
+            <ButtonGroup>
+              <SaveButton type="submit" disabled={loading}>
+                {loading ? "저장 중..." : "저장하기"}
+              </SaveButton>
+              <CancelButton type="button" onClick={() => navigate("/mypage")}>
+                취소
+              </CancelButton>
+              <DeleteButton type="button">
+                회원탈퇴
+              </DeleteButton>
+            </ButtonGroup>
+          </Form>
+        </MainContent>
+
+        <Sidebar>
+          <NavMenu>
+            <NavItem
+              active={activeSection === 'profile'}
+              onClick={() => setActiveSection('profile')}
+            >
+              기본 정보 수정
+            </NavItem>
+            <NavItem
+              active={activeSection === 'password'}
+              onClick={() => setActiveSection('password')}
+            >
+              비밀번호 변경
+            </NavItem>
+          </NavMenu>
+        </Sidebar>
+      </Container>
+    </>
   );
 };
 
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 1000px;
   margin: 3rem auto;
-  padding: 0 2rem;
+  padding: 0 1.5rem;
+  display: flex;
+  gap: 2rem;
 `;
 
-const Header = styled.header`
-  margin-bottom: 3rem;
-  text-align: center;
+const MainContent = styled.div`
+  flex: 1;
 `;
 
 const Title = styled.h1`
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 1rem;
+  font-size: 2.25rem;
+  color: #1a365d;
+  margin-bottom: 2.5rem;
+  text-align: center;
+  font-weight: 700;
 `;
 
-const SubTitle = styled.p`
-  color: #7f8c8d;
-  font-size: 1.1rem;
+const Sidebar = styled.div`
+  width: 250px;
+  height: fit-content;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+`;
+
+const NavMenu = styled.nav`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const NavItem = styled.button`
+  padding: 1rem 1.5rem;
+  text-align: left;
+  background: ${props => props.active ? '#3182ce' : 'transparent'};
+  color: ${props => props.active ? 'white' : '#4a5568'};
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: ${props => props.active ? '#2b6cb0' : '#f7fafc'};
+  }
 `;
 
 const Form = styled.form`
@@ -263,6 +349,17 @@ const CancelButton = styled(Button)`
     background: #f8f9fa;
     border-color: #dee2e6;
   }
+`;
+
+const DeleteButton = styled(Button)`
+  background: white;
+  color: #e53e3e;
+  border: 2px solid #e53e3e;
+
+&:hover {
+  background: #fff5f5;
+  border-color: #fc8181;
+}
 `;
 
 export default ProfileEdit;

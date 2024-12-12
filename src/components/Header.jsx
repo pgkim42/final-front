@@ -164,6 +164,16 @@ const Header = () => {
               </SubMenuItem>
             </SubMenu>
           </NavItem>
+          
+          <NavItem>
+            Member
+            <SubMenu>
+              <SubMenuItem>
+                <StyledNavLink to="/member/profile">마이페이지</StyledNavLink>
+              </SubMenuItem>
+            </SubMenu>
+          </NavItem>
+
           <NavItem>
             페이지
             <SubMenu>
@@ -181,6 +191,16 @@ const Header = () => {
               </SubMenuItem>
             </SubMenu>
           </NavItem>
+
+          <NavItem>
+            기업용 페이지
+            <SubMenu>
+              <SubMenuItem>
+                <StyledNavLink to="/company">기업 대시보드</StyledNavLink>
+              </SubMenuItem>
+            </SubMenu>
+          </NavItem>
+
         </NavList>
 
         <RightSection>
