@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled, { createGlobalStyle } from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -48,11 +50,11 @@ const Label = styled.label`
 
 const Input = styled.input`
   padding: 12px 16px;
-  border: 2px solid ${props => props.hasError ? '#e74c3c' : '#bdc3c7'};
+  border: 2px solid ${(props) => (props.hasError ? '#e74c3c' : '#bdc3c7')};
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: #3498db;
@@ -89,10 +91,10 @@ const ErrorMessage = styled.span`
 
 const QuillWrapper = styled.div`
   .ql-container {
-    min-height: 300px; 
+    min-height: 300px;
     font-size: 1rem;
   }
-  
+
   .ql-editor {
     min-height: 300px;
   }
@@ -104,35 +106,76 @@ const MODULES = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     ['link', 'image'],
-    ['clean']
-  ]
+    ['clean'],
+  ],
 };
-
-const experienceOptions = [
-  { label: '경력무관', value: -1 },
-  { label: '신입', value: 0 },
-  { label: '경력', value: 1 },
-];
-
 
 const JobPosting = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    description: '',
-    position: '',
-    numberOfPositions: '',
+    content: '',
+    recruitJob: '',
+    recruitField: 3,
     salary: '',
-    deadline: '',
-    experience: '',
-    experienceYears: '', // 경력 연수 필드 추가
-    skills: '',
-    image: null // 이미지 파일 필드 추가
+    postingStatus: true,
+    workExperience: '',
+    tag: '',
+    jobCategory: 'IT/개발',
+    postingDeadline: '',
+    companyProfileCode: 6,
+    skill: '',
+    address: '',
   });
-  const [experienceType, setExperienceType] = useState(''); // 경력 유형 상태 추가
 
-  // handleChange 함수 정의
+  const navigate = useNavigate();
+
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
+  };
+
+  useEffect(() => {
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('인증 토큰이 없습니다.');
+      }
+
+      // FormData로 변환
+      const formDataToSend = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSend.append(key, value);
+      });
+
+      await axios.post('http://localhost:8080/jobposting/register', formDataToSend, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert('채용 공고가 성공적으로 등록되었습니다.');
+      navigate('/jobs');
+    } catch (err) {
+      console.error('Error during submission:', err);
+      setError(err.response?.data?.message || '공고 등록에 실패했습니다.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -141,48 +184,11 @@ const JobPosting = () => {
     }));
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.title.trim()) newErrors.title = '제목을 입력해주세요';
-    if (!formData.description.trim()) newErrors.description = '내용을 입력해주세요';
-    if (!formData.position.trim()) newErrors.position = '모집직무를 입력해주세요';
-    if (!formData.numberOfPositions) newErrors.numberOfPositions = '모집인원을 입력해주세요';
-    if (!formData.deadline) newErrors.deadline = '마감일을 선택해주세요';
-    return newErrors;
-  };
-
-  const handleFileChange = (e) => {
-    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
-  };
-
-  const handleQuillChange = (content) => {
+  const handleQuillChange = (value) => {
     setFormData((prev) => ({
       ...prev,
-      description: content,
+      content: value,
     }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const newErrors = validateForm();
-
-    if (Object.keys(newErrors).length === 0) {
-      setIsSubmitting(true);
-      try {
-        // API 호출 여기에 넣을 예정
-        // await submitJobPosting(formData);
-
-        console.log('폼 제출됨:', formData);
-        // 폼 초기화 또는 리다이렉트
-      } catch (error) {
-        console.error('제출 오류:', error);
-        alert('채용공고 등록 중 오류가 발생했습니다.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    } else {
-      setErrors(newErrors);
-    }
   };
 
   return (
@@ -198,52 +204,45 @@ const JobPosting = () => {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              hasError={!!errors.title}
-              placeholder="채용 공고 제목을 입력해주세요"
+              placeholder="채용 공고 제목"
             />
-            {errors.title && <ErrorMessage>{errors.title}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="description">상세 내용 *</Label>
+            <Label htmlFor="content">상세 내용 *</Label>
             <QuillWrapper>
               <ReactQuill
                 theme="snow"
-                value={formData.description}
+                value={formData.content}
                 onChange={handleQuillChange}
                 modules={MODULES}
-                placeholder="상세 내용을 입력해주세요"
+                placeholder="채용 공고의 상세 내용을 입력하세요"
               />
             </QuillWrapper>
-            {errors.description && <ErrorMessage>{errors.description}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="position">모집직무 *</Label>
+            <Label htmlFor="recuritField">모집인원 *</Label>
             <Input
-              id="position"
-              name="position"
-              value={formData.position}
-              onChange={handleChange}
-              hasError={!!errors.position}
-              placeholder="예) 프론트엔드 개발자"
-            />
-            {errors.position && <ErrorMessage>{errors.position}</ErrorMessage>}
-          </FormGroup>
-
-          <FormGroup>
-            <Label htmlFor="numberOfPositions">모집인원 *</Label>
-            <Input
-              id="numberOfPositions"
-              name="numberOfPositions"
+              id="recuritField"
+              name="recuritField"
               type="number"
-              value={formData.numberOfPositions}
+              value={formData.recruitField}
               onChange={handleChange}
-              hasError={!!errors.numberOfPositions}
               min="1"
               placeholder="숫자만 입력"
             />
-            {errors.numberOfPositions && <ErrorMessage>{errors.numberOfPositions}</ErrorMessage>}
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="recruitJob">모집 직무 *</Label>
+            <Input
+              id="recruitJob"
+              name="recruitJob"
+              value={formData.recruitJob}
+              onChange={handleChange}
+              placeholder="모집 직무 입력"
+            />
           </FormGroup>
 
           <FormGroup>
@@ -281,52 +280,27 @@ const JobPosting = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="deadline">공고마감일 *</Label>
+            <Label htmlFor="postingDeadline">공고마감일 *</Label>
             <Input
-              id="deadline"
-              name="deadline"
-              type="date"
-              value={formData.deadline}
+              id="postingDeadline"
+              name="postingDeadline"
+              type="datetime-local"
+              value={formData.postingDeadline}
               onChange={handleChange}
-              hasError={!!errors.deadline}
-              min={new Date().toISOString().split('T')[0]}
+              min={new Date().toISOString().slice(0, 16)}
             />
-            {errors.deadline && <ErrorMessage>{errors.deadline}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="experience">경력 *</Label>
-            <div>
-              {experienceOptions.map(option => (
-                <div key={option.value} style={{ marginBottom: '10px' }}>
-                  <input
-                    type="radio"
-                    id={`experience-${option.value}`}
-                    name="experience"
-                    value={option.value}
-                    checked={experienceType === option.value}
-                    onChange={e => {
-                      const value = parseInt(e.target.value);
-                      setExperienceType(value);
-                      setFormData(prev => ({ ...prev, experience: value }));
-                    }}
-                  />
-                  <label htmlFor={`experience-${option.value}`}>{option.label}</label>
-                </div>
-              ))}
-            </div>
-            {experienceType === 1 && (
-              <Input
-                id="experienceYears"
-                name="experienceYears"
-                type="number"
-                value={formData.experienceYears}
-                onChange={e => setFormData(prev => ({ ...prev, experienceYears: e.target.value }))}
-                placeholder="경력 연수 (숫자 입력)"
-                style={{ marginTop: '10px' }}
-              />
-            )}
-            {errors.experience && <ErrorMessage>{errors.experience}</ErrorMessage>}
+            <Label htmlFor="workExperience">경력 *</Label>
+            <Input
+              id="workExperience"
+              name="workExperience"
+              type="number"
+              value={formData.workExperience}
+              onChange={handleChange}
+              min="0"
+              placeholder="숫자만 입력" />
           </FormGroup>
 
           <FormGroup>
@@ -352,9 +326,10 @@ const JobPosting = () => {
           </FormGroup>
 
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? '등록 중...' : '채용공고 등록하기'}
+            {isSubmitting ? '등록 중...' : '채용 공고 등록'}
           </Button>
         </Form>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
       </Container>
     </>
   );

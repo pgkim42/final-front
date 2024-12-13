@@ -47,6 +47,7 @@ import AdminMatching from './features/admin/AdminMatching';
 
 // API Test
 import TestResume from './TestResume';
+import JobPostEdit from './features/job/JobPostEdit';
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path={ROUTES.JOB.LIST} element={<JobListPage />} />
           <Route path={ROUTES.JOB.POST} element={<JobPosting />} />
           <Route path={ROUTES.JOB.DETAIL} element={<JobPostDetail />} />
+          <Route path={ROUTES.JOB.EDIT} element={<JobPostEdit />} />
 
           {/* 이력서 관련 */}
           <Route path={ROUTES.RESUME.LIST} element={<ResumeList />} />

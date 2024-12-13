@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
 import { format } from 'date-fns';
@@ -8,11 +8,37 @@ import JobListBar from './JobListBar';
 
 const JobPostDetail = () => {
   const { code } = useParams();
+  const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [recentJobs, setRecentJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isAuthor, setIsAuthor] = useState(false);
 
+  useEffect(() => {
+    const checkAuthor = () => {
+      const currentUser = localStorage.getItem('userCode');
+      if (job && currentUser) {
+        setIsAuthor(currentUser === job.userCode);
+      }
+    };
+
+    checkAuthor();
+  }, [job]);
+
+  const handleDelete = async () => {
+    if (window.confirm('정말 삭제하시겠습니까?')) {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`http://localhost:8080/jobposting/remove/${code}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        navigate('/jobs');
+      } catch (err) {
+        console.error('Delete error:', err);
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchJobDetail = async () => {
@@ -59,6 +85,16 @@ const JobPostDetail = () => {
         <DetailSection>
           <Header>
             <Title>{job.title}</Title>
+            {isAuthor && (
+              <ButtonGroup>
+                <EditButton onClick={() => navigate(`/jobs/edit/${code}`)}>
+                  수정
+                </EditButton>
+                <DeleteButton onClick={handleDelete}>
+                  삭제
+                </DeleteButton>
+              </ButtonGroup>
+            )}
             <SubInfo>
               <InfoItem>
                 <Icon viewBox="0 0 24 24">
@@ -87,7 +123,7 @@ const JobPostDetail = () => {
 
             <Section>
               <SectionTitle>상세내용</SectionTitle>
-              <SectionContent>{job.content}</SectionContent>
+              <SectionContent dangerouslySetInnerHTML={{ __html: job.content }} />
             </Section>
 
             <Section>
@@ -300,6 +336,38 @@ const JobInfo = styled.div`
   margin-top: 0.5rem;
   color: #666;
   font-size: 0.9rem;
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
+
+const Button = styled.button`
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+`;
+
+const EditButton = styled(Button)`
+  background-color: #3498db;
+  color: white;
+  border: none;
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+const DeleteButton = styled(Button)`
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  &:hover {
+    background-color: #c0392b;
+  }
 `;
 
 export default JobPostDetail;
