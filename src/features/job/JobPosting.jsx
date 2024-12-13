@@ -108,6 +108,13 @@ const MODULES = {
   ]
 };
 
+const experienceOptions = [
+  { label: '경력무관', value: -1 },
+  { label: '신입', value: 0 },
+  { label: '경력', value: 1 },
+];
+
+
 const JobPosting = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
@@ -119,8 +126,20 @@ const JobPosting = () => {
     salary: '',
     deadline: '',
     experience: '',
-    skills: ''
+    experienceYears: '', // 경력 연수 필드 추가
+    skills: '',
+    image: null // 이미지 파일 필드 추가
   });
+  const [experienceType, setExperienceType] = useState(''); // 경력 유형 상태 추가
+
+  // handleChange 함수 정의
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -132,18 +151,14 @@ const JobPosting = () => {
     return newErrors;
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
   };
 
   const handleQuillChange = (content) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      description: content
+      description: content,
     }));
   };
 
@@ -233,13 +248,36 @@ const JobPosting = () => {
 
           <FormGroup>
             <Label htmlFor="salary">급여</Label>
-            <Input
-              id="salary"
-              name="salary"
-              value={formData.salary}
-              onChange={handleChange}
-              placeholder="예) 3,500만원 / 면접 후 결정"
-            />
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <input
+                type="radio"
+                id="salaryInput"
+                name="salaryType"
+                value="direct"
+                checked={!formData.salary.includes('면접 후 결정')}
+                onChange={() => setFormData(prev => ({ ...prev, salary: '' }))}
+              />
+              <label htmlFor="salaryInput">직접입력</label>
+              <input
+                type="radio"
+                id="salaryNegotiable"
+                name="salaryType"
+                value="negotiable"
+                checked={formData.salary === '면접 후 결정'}
+                onChange={() => setFormData(prev => ({ ...prev, salary: '면접 후 결정' }))}
+              />
+              <label htmlFor="salaryNegotiable">면접 후 결정</label>
+            </div>
+            {!formData.salary.includes('면접 후 결정') && (
+              <Input
+                id="salary"
+                name="salary"
+                value={formData.salary}
+                onChange={handleChange}
+                placeholder="예) 3,500만원"
+                style={{ marginTop: '10px' }}
+              />
+            )}
           </FormGroup>
 
           <FormGroup>
@@ -257,14 +295,38 @@ const JobPosting = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="experience">경력</Label>
-            <Input
-              id="experience"
-              name="experience"
-              value={formData.experience}
-              onChange={handleChange}
-              placeholder="예) 신입 / 경력 3년 이상"
-            />
+            <Label htmlFor="experience">경력 *</Label>
+            <div>
+              {experienceOptions.map(option => (
+                <div key={option.value} style={{ marginBottom: '10px' }}>
+                  <input
+                    type="radio"
+                    id={`experience-${option.value}`}
+                    name="experience"
+                    value={option.value}
+                    checked={experienceType === option.value}
+                    onChange={e => {
+                      const value = parseInt(e.target.value);
+                      setExperienceType(value);
+                      setFormData(prev => ({ ...prev, experience: value }));
+                    }}
+                  />
+                  <label htmlFor={`experience-${option.value}`}>{option.label}</label>
+                </div>
+              ))}
+            </div>
+            {experienceType === 1 && (
+              <Input
+                id="experienceYears"
+                name="experienceYears"
+                type="number"
+                value={formData.experienceYears}
+                onChange={e => setFormData(prev => ({ ...prev, experienceYears: e.target.value }))}
+                placeholder="경력 연수 (숫자 입력)"
+                style={{ marginTop: '10px' }}
+              />
+            )}
+            {errors.experience && <ErrorMessage>{errors.experience}</ErrorMessage>}
           </FormGroup>
 
           <FormGroup>
@@ -275,6 +337,17 @@ const JobPosting = () => {
               value={formData.skills}
               onChange={handleChange}
               placeholder="예) React, JavaScript, Node.js (쉼표로 구분)"
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="image">공고 이미지</Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              onChange={handleFileChange}
+              style={{ marginTop: '10px' }}
             />
           </FormGroup>
 

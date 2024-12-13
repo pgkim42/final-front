@@ -1,181 +1,133 @@
-import styled from 'styled-components';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import PropTypes from 'prop-types';
+import axios from 'axios';
+import styled from 'styled-components';
 
-const ListHeader = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
+const JobListBar = () => {
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get('http://localhost:8080/jobposting/list');
+        if (!response.data) throw new Error('데이터가 없습니다.');
+
+        const reversedData = [...response.data].reverse().slice(0, 5);
+        setJobs(reversedData);
+      } catch (err) {
+        setError(err.message || '채용공고를 불러오는데 실패했습니다.');
+        console.error('Error fetching jobs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
+  if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
+
+  return (
+    <Container>
+      <Title>최근 채용공고</Title>
+      <JobList>
+        {jobs.map(job => (
+          <JobItem key={job.jobCode}>
+            <Link to={`/jobs/${job.jobCode}`}>
+              <JobTitle>{job.title}</JobTitle>
+              <JobInfo>
+                <div>{job.recruitJob}</div>
+                <div>{job.address}</div>
+                <SkillTags>
+                  {job.skill && job.skill.split(',').map((skill, index) => (
+                    <SkillTag key={index}>{skill.trim()}</SkillTag>
+                  ))}
+                </SkillTags>
+              </JobInfo>
+            </Link>
+          </JobItem>
+        ))}
+      </JobList>
+    </Container>
+  );
+};
+
+const Container = styled.div`
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 1.5rem;
 `;
 
-const Title = styled.h1`
-  font-size: 2.5rem;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-`;
-
-const Description = styled.p`
-  font-size: 1.2rem;
-  color: #666;
-`;
-
-const CompanySection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-`;
-
-const CompanyLogo = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  object-fit: cover;
-`;
-
-const CompanyInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const CompanyName = styled.span`
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
-const Location = styled.span`
-  font-size: 0.9rem;
-  color: #666;
-`;
-
-const JobInfo = styled.div`
-  margin-bottom: 1.5rem;
-`;
-
-const JobTitle = styled.h2`
+const Title = styled.h2`
   font-size: 1.25rem;
   color: #2c3e50;
   margin-bottom: 1rem;
 `;
 
-const SkillList = styled.div`
+const JobList = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 1rem;
 `;
 
-const SkillTag = styled.span`
-  background: #f0f2f5;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  color: #2c3e50;
-`;
-
-
-const Container = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-`;
-
-const JobGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-`;
-
-const JobCard = styled.div`
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+const JobItem = styled.div`
+  border-radius: 8px;
+  background: #f8fafc;
   transition: transform 0.2s;
   
   &:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
   }
   
   a {
     text-decoration: none;
     color: inherit;
     display: block;
-    padding: 1.5rem;
+    padding: 1rem;
   }
 `;
 
-const JobListBar = ({ jobs, type }) => {
-  const getTitleAndDescription = () => {
-    if (type === 'similarJobs') {
-      return {
-        title: '유사 채용 공고',
-        description: '해당 포지션과 유사한 채용 공고를 확인하세요.',
-      };
-    } else if (type === 'Jobs') {
-      return {
-        title: '모든 채용 공고',
-        description: '현재 모든 채용 정보를 확인하세요.',
-      };
-    } else {
-      return {
-        title: '채용 공고',
-        description: '현재 모집 중인 포지션을 확인하세요.',
-      };
-    }
-  };
+const JobTitle = styled.h3`
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+`;
 
-  const { title, description } = getTitleAndDescription();
+const JobInfo = styled.div`
+  font-size: 0.875rem;
+  color: #666;
+`;
 
-  return (
-    <Container>
-      <ListHeader>
-        <Title>{title}</Title>
-        <Description>{description}</Description>
-      </ListHeader>
+const SkillTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
 
-      <JobGrid>
-        {jobs.length > 0 ? (
-          jobs.map((job) => (
-            <JobCard key={job.id}>
-              <Link to={`/jobs/${job.id || ''}`}>
-                <CompanySection>
-                  <CompanyLogo src={job.companyLogo} alt={job.companyName} />
-                  <CompanyInfo>
-                    <CompanyName>{job.companyName}</CompanyName>
-                    <Location>{job.location}</Location>
-                  </CompanyInfo>
-                </CompanySection>
-                <JobInfo>
-                  <JobTitle>{job.title}</JobTitle>
-                  <SkillList>
-                    {(job.skills || []).map((skill, index) => (
-                      <SkillTag key={index}>{skill}</SkillTag>
-                    ))}
-                  </SkillList>
-                </JobInfo>
-              </Link>
-            </JobCard>
-          ))
-        ) : (
-          <p>채용 공고가 없습니다.</p>
-        )}
-      </JobGrid>
-    </Container>
-  );
-};
+const SkillTag = styled.span`
+  background: #f0f2f5;
+  padding: 0.25rem 0.5rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #2c3e50;
+`;
 
-JobListBar.propTypes = {
-  jobs: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      companyLogo: PropTypes.string,
-      companyName: PropTypes.string.isRequired,
-      location: PropTypes.string,
-      title: PropTypes.string.isRequired,
-      skills: PropTypes.arrayOf(PropTypes.string),
-    })
-  ).isRequired,
-  type: PropTypes.oneOf(['similarJobs', 'Jobs']).isRequired,
-};
+const LoadingWrapper = styled.div`
+  text-align: center;
+  padding: 2rem;
+`;
+
+const ErrorWrapper = styled.div`
+  color: red;
+  text-align: center;
+  padding: 2rem;
+`;
 
 export default JobListBar;

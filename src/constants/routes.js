@@ -1,10 +1,10 @@
 export const ROUTES = {
   HOME: '/',
-  
+
   JOB: {
     LIST: '/jobs',
     POST: '/jobs/post',
-    DETAIL: '/jobs/:id',
+    DETAIL: '/jobs/:code',
   },
 
   RESUME: {

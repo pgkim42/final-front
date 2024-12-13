@@ -1,42 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-
-const dummyJobs = [
-  {
-    id: 1,
-    title: "시니어 프론트엔드 개발자",
-    companyName: "테크스타트",
-    location: "서울 강남구",
-    companyLogo: "https://via.placeholder.com/50",
-    skills: ["React", "TypeScript", "Node.js"],
-    deadline: "2024-04-30",
-    salary: "6000만원 이상",
-    experience: "5년 이상"
-  },
-  {
-    id: 2,
-    title: "백엔드 개발자",
-    companyName: "네오테크",
-    location: "서울 서초구",
-    companyLogo: "https://via.placeholder.com/50",
-    skills: ["Java", "Spring", "MySQL"],
-    deadline: "2024-05-15",
-    salary: "4500만원 이상",
-    experience: "3년 이상"
-  },
-  {
-    id: 3,
-    title: "DevOps 엔지니어",
-    companyName: "클라우드테크",
-    location: "서울 성동구",
-    companyLogo: "https://via.placeholder.com/50",
-    skills: ["AWS", "Docker", "Kubernetes"],
-    deadline: "2024-05-20",
-    salary: "5000만원 이상",
-    experience: "4년 이상"
-  }
-];
+import axios from 'axios';
+import { format } from 'date-fns';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -44,33 +10,63 @@ const JobListPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filteredJobs, setFilteredJobs] = useState(dummyJobs);
+  const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSkillFilter = (skill) => {
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  const fetchJobs = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get('http://localhost:8080/jobposting/list');
+      if (!response.data) throw new Error('데이터가 없습니다.');
+
+      // 데이터를 역순으로 정렬
+      const reversedData = [...response.data].reverse();
+      // 또는 jobCode 기준으로 정렬하려면:
+      // const reversedData = [...response.data].sort((a, b) => b.jobCode - a.jobCode);
+
+      setJobs(reversedData);
+      setFilteredJobs(reversedData);
+    } catch (err) {
+      setError(err.message || '채용공고를 불러오는데 실패했습니다.');
+      console.error('Error fetching jobs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSkillFilter = useCallback((skill) => {
     setSelectedSkills(prev =>
       prev.includes(skill)
         ? prev.filter(s => s !== skill)
         : [...prev, skill]
     );
-  };
+  }, []);
 
   useEffect(() => {
-    const filtered = dummyJobs.filter(job => {
+    const filtered = jobs.filter(job => {
       const matchesSearch =
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.location.toLowerCase().includes(searchTerm.toLowerCase());
+        job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.address?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesSkills =
-        selectedSkills.length === 0 ||
-        selectedSkills.every(skill => job.skills.includes(skill));
+      const jobSkills = job.skill?.split(',').map(s => s.trim()) || [];
+      const matchesSkills = selectedSkills.length === 0 ||
+        selectedSkills.every(skill => jobSkills.includes(skill));
 
       return matchesSearch && matchesSkills;
     });
-
     setFilteredJobs(filtered);
     setCurrentPage(1);
-  }, [searchTerm, selectedSkills]);
+  }, [searchTerm, selectedSkills, jobs]);
+
+  if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
+  if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
 
   const pageCount = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
   const currentJobs = filteredJobs.slice(
@@ -105,43 +101,49 @@ const JobListPage = () => {
       </FilterSection>
 
       <JobGrid>
-        {currentJobs.map(job => (
-          <JobCard key={job.id}>
-            <Link to={`/jobs/${job.id}`}>
-              <CompanySection>
-                <CompanyLogo src={job.companyLogo} alt={job.companyName} />
-                <CompanyInfo>
-                  <CompanyName>{job.companyName}</CompanyName>
-                  <Location>{job.location}</Location>
-                </CompanyInfo>
-              </CompanySection>
-              <JobInfo>
-                <JobTitle>{job.title}</JobTitle>
-                <Salary>{job.salary}</Salary>
-                <Experience>{job.experience}</Experience>
-                <SkillTags>
-                  {job.skills.map(skill => (
-                    <SkillTag key={skill}>{skill}</SkillTag>
-                  ))}
-                </SkillTags>
-                <Deadline>마감일: {job.deadline}</Deadline>
-              </JobInfo>
-            </Link>
-          </JobCard>
-        ))}
+        {filteredJobs.length === 0 ? (
+          <NoDataWrapper>검색 결과가 없습니다.</NoDataWrapper>
+        ) : (
+          currentJobs.map(job => (
+            <JobCard key={job.jobCode}>
+              <Link to={`/jobs/${job.jobCode}`}>
+                <JobInfo>
+                  <JobTitle>{job.title}</JobTitle>
+                  <Location>{job.address}</Location>
+                  <Salary>{job.salary}</Salary>
+                  <Experience>
+                    {job.workExperience === 0
+                      ? '신입'
+                      : job.workExperience === -1
+                        ? '경력무관'
+                        : `경력 ${job.workExperience}년`}
+                  </Experience>
+                  <SkillTags>
+                    {job.skill && job.skill.split(',').map((skill, index) => (
+                      <SkillTag key={index}>{skill.trim()}</SkillTag>
+                    ))}
+                  </SkillTags>
+                  <Deadline>마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}</Deadline>
+                </JobInfo>
+              </Link>
+            </JobCard>
+          ))
+        )}
       </JobGrid>
 
-      <Pagination>
-        {[...Array(pageCount)].map((_, i) => (
-          <PageButton
-            key={i + 1}
-            active={currentPage === i + 1}
-            onClick={() => setCurrentPage(i + 1)}
-          >
-            {i + 1}
-          </PageButton>
-        ))}
-      </Pagination>
+      {filteredJobs.length > 0 && (
+        <Pagination>
+          {[...Array(pageCount)].map((_, i) => (
+            <PageButton
+              key={i + 1}
+              active={currentPage === i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </PageButton>
+          ))}
+        </Pagination>
+      )}
     </Container>
   );
 };
@@ -228,30 +230,6 @@ const JobCard = styled.div`
   }
 `;
 
-const CompanySection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const CompanyLogo = styled.img`
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  object-fit: cover;
-`;
-
-const CompanyInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const CompanyName = styled.span`
-  font-weight: 600;
-  color: #2c3e50;
-`;
-
 const Location = styled.span`
   font-size: 0.9rem;
   color: #666;
@@ -319,6 +297,22 @@ const PageButton = styled.button`
   &:hover {
     background: ${props => props.active ? '#2980b9' : '#cbd5e0'};
   }
+`;
+
+const LoadingWrapper = styled.div`
+  text-align: center;
+  padding: 2rem;
+`;
+
+const ErrorWrapper = styled.div`
+  color: red;
+  text-align: center;
+  padding: 2rem;
+`;
+
+const NoDataWrapper = styled.div`
+  text-align: center;
+  padding: 2rem;
 `;
 
 export default JobListPage;
