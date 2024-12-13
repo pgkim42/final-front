@@ -35,7 +35,7 @@ const OAuthCallback = () => {
         setAlertShown(true); // 메시지 출력 상태 업데이트
 
         console.log("데이터 저장 완료, 홈으로 이동");
-        setTimeout(() => navigate("/"), 100);
+        setTimeout(() => navigate("/"));
       } catch (error) {
         console.error("데이터 저장 중 오류 발생:", error);
         navigate("/error");
@@ -43,11 +43,11 @@ const OAuthCallback = () => {
     }
   }, [alertShown, login, navigate]); // 의존성 최소화
 
-  return (
-    <div>
-      <h2>로그인 처리 중...</h2>
-    </div>
-  );
+  // return (
+  //   <div>
+  //     <h2>로그인 처리 중...</h2>
+  //   </div>
+  // );
 };
 
 export default OAuthCallback;

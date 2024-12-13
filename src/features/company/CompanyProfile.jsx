@@ -2,14 +2,20 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../pages/AuthContent';
 
 const CompanyProfile = () => {
 
   const navigate = useNavigate();
 
+  const { companyName, companyAddress, ceoName, companyType } = useAuth();
+
   const [companyInfo, setCompanyInfo] = useState({
-    name: "테크스타트",
+    name: companyName,
     logo: "https://via.placeholder.com/150",
+    address : companyAddress,
+    ceo : ceoName,
+    companyType : companyType,
     description: "혁신적인 기술 솔루션을 제공하는 기업입니다. 우리는 최신 기술을 활용하여 고객의 문제를 해결하고, 더 나은 미래를 만들어가고 있습니다.",
     industry: "IT/소프트웨어",
     website: "https://techstart.co.kr",
@@ -42,9 +48,12 @@ const CompanyProfile = () => {
 
           <InfoSection>
             <CompanyName>{companyInfo.name}</CompanyName>
-            <Industry>{companyInfo.industry}</Industry>
+            <CompanyType>기업 규모 : {companyInfo.companyType}</CompanyType>
+            <CeoName>대표명 : {companyInfo.ceo}</CeoName>
+            <CompanyAddress>주소 : {companyInfo.address} </CompanyAddress>
+            <Industry>업종 : {companyInfo.industry}</Industry>
             <Website href={companyInfo.website} target="_blank">
-              {companyInfo.website}
+              사이트 : {companyInfo.website}
             </Website>
             <Description>{companyInfo.description}</Description>
             <EditButton onClick={() => navigate('/company/profile/edit')}>정보 수정</EditButton>
@@ -140,6 +149,21 @@ const CompanyName = styled.h1`
 
 
 const Industry = styled.div`
+  color: #64748b;
+  margin-bottom: 0.5rem;
+`;
+
+const CompanyType = styled.div`
+  color: #64748b;
+  margin-bottom: 0.5rem;
+`;
+
+const CeoName = styled.div`
+  color: #64748b;
+  margin-bottom: 0.5rem;
+`;
+
+const CompanyAddress = styled.div`
   color: #64748b;
   margin-bottom: 0.5rem;
 `;

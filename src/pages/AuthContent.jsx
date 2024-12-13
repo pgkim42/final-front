@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     userType: null,
     email: null,
     userId: null,
+    userCode: null,
     companyCode: null,
     companyType: null,
     companyName: null,
@@ -19,7 +20,8 @@ export const AuthProvider = ({ children }) => {
     const name = localStorage.getItem("name");
     const userType = localStorage.getItem("type");
     const email = localStorage.getItem("email");
-    const userId = localStorage.getItem("userCode") || localStorage.getItem("userId");
+    const userId = localStorage.getItem("userId");
+    const userCode = localStorage.getItem("userCode") 
     const companyCode = localStorage.getItem("companyCode");
     const companyType = localStorage.getItem("companyType");
     const companyName = localStorage.getItem("companyName");
@@ -31,6 +33,7 @@ export const AuthProvider = ({ children }) => {
       userType: userType || null,
       email: email || null,
       userId: userId || null,
+      userCode: userCode || null,
       companyCode: userType === "company" ? companyCode || null : null,
       companyType: userType === "company" ? companyType || null : null,
       companyName: userType === "company" ? companyName || null : null,
@@ -43,6 +46,7 @@ export const AuthProvider = ({ children }) => {
       userType,
       email,
       userId,
+      userCode,
       companyCode,
       companyType,
       companyName,
@@ -51,22 +55,18 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  const login = (name, userType, email, userId, token, companyData = null) => {
+  const login = (name, userType, email, userId, userCode, token, companyData = null) => {
     localStorage.setItem("name", name);
     localStorage.setItem("type", userType);
     localStorage.setItem("email", email);
+    localStorage.setItem("userId", userId);
+    localStorage.setItem("userCode", userCode);
+    localStorage.setItem("token", token);
 
-    // 일반 로그인에서만 메시지 출력
+    // 일반 로그인에서 메시지 출력
     if (userType !== "kakao" && userType !== "naver") {
       alert(`${name} 님이 로그인 하셨습니다.`);
     }
-
-    if (userType === "kakao" || userType === "naver") {
-      localStorage.setItem("userCode", userId);
-    } else {
-      localStorage.setItem("userId", userId);
-    }
-    localStorage.setItem("token", token);
 
     if (userType === "company" && companyData) {
       localStorage.setItem("companyCode", companyData.companyCode || "");
@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
       userType,
       email,
       userId,
+      userCode,
       companyCode: userType === "company" ? companyData?.companyCode || null : null,
       companyType: userType === "company" ? companyData?.companyType || null : null,
       companyName: userType === "company" ? companyData?.companyName || null : null,
@@ -98,6 +99,7 @@ export const AuthProvider = ({ children }) => {
       userType: null,
       email: null,
       userId: null,
+      userCode: null,
       companyCode: null,
       companyType: null,
       companyName: null,
@@ -113,6 +115,7 @@ export const AuthProvider = ({ children }) => {
       userType: null,
       email: null,
       userId: null,
+      userCode: null,
       companyCode: null,
       companyType: null,
       companyName: null,

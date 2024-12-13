@@ -32,6 +32,7 @@ export default function SignIn() {
         token,
         expirationTime,
         userId,
+        userCode,
         type,
         name,
         email,
@@ -50,7 +51,7 @@ export default function SignIn() {
         companyAddress,
       };
   
-      login(name, type, email, userId, token, type === "company" ? companyData : null);
+      login(name, type, email, userId, userCode, token, type === "company" ? companyData : null);
   
       // JWT 토큰 저장
       const expires = new Date(new Date().getTime() + expirationTime * 1000);

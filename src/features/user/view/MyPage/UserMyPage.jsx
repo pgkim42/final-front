@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect} from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
@@ -185,13 +185,10 @@ const UserMyPage = () => {
             <EditButton onClick={handleOpenPasswordModal}>회원 수정</EditButton>
           )}
 
-          {/* {['dev', 'company'].includes(userType) && (
-            <RemoveButton onClick={handleOpenSocialRemoveModal}>회원 탈퇴</RemoveButton>
-          )} */}
-
           {['kakao', 'naver'].includes(userType) && (
-            <RemoveSocialButton onClick={handleOpenSocialRemoveModal}>회원 탈퇴</RemoveSocialButton>
+            <EditButton onClick={() => navigate('/profile/edit')}>회원 수정</EditButton>
           )}
+
 
         </Section>
 
@@ -279,136 +276,6 @@ const UserMyPage = () => {
                 취소
               </CancelButton>
             </ButtonGroup>
-          </form>
-        </ModalContent>
-      </Modal>
-
-      {/* 회원탈퇴 확인 모달 */}
-      {/* <Modal
-        isOpen={isSocialRemoveModalOpen}
-        onRequestClose={handleCloseSocialRemoveModal}
-        contentLabel="소셜 회원탈퇴"
-        style={{
-          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
-          content: {
-            width: "520px", // 기존 크기보다 약 30% 증가
-            height: "fit-content",
-            maxHeight: "90vh",
-            margin: "auto",
-            padding: "30px", // 더 넓은 여백
-            borderRadius: "12px",
-            overflowY: "auto",
-          },
-        }}
-      >
-        <ModalContent>
-          <h2>회원 탈퇴</h2>
-          <form onSubmit={handleRemoveSubmit}>
-            <div>
-              <CheckboxContainer>
-                <Checkbox
-                  type="checkbox"
-                  id="socialConsent"
-                  checked={isChecked}
-                  onChange={() => setIsChecked(!isChecked)}
-                />
-                <Label htmlFor="socialConsent">
-                  회원 탈퇴를 진행하여 통합 로그인 계정에 <br /> 귀속된 모든 정보를 삭제하는데 동의합니다.
-                  <br /><br />
-                  {userId}/탈퇴합니다 를 입력하세요
-                </Label>
-              </CheckboxContainer>
-              <InputContainer>
-                <PasswordInput
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={`${userId}/탈퇴합니다 를 입력하세요`} // 변경
-                  required
-                />
-              </InputContainer>
-              {userInput && userInput !== `${userId}/탈퇴합니다` && (
-                <ErrorMessage>입력하신 내용이 정확하지 않습니다.</ErrorMessage>
-              )}
-              {error && <ErrorMessage>{error}</ErrorMessage>}
-              <ButtonGroup>
-                <SubmitButton
-                  type="submit"
-                  disabled={!isChecked || userInput !== `${userId}/탈퇴합니다`}
-                >
-                  회원 탈퇴
-                </SubmitButton>
-                <CancelButton type="button" onClick={handleCloseSocialRemoveModal}>
-                  취소
-                </CancelButton>
-              </ButtonGroup>
-            </div>
-          </form>
-        </ModalContent>
-      </Modal> */}
-
-      {/* 소셜회원탈퇴 확인 모달 */}
-      <Modal
-        isOpen={isSocialRemoveModalOpen}
-        onRequestClose={handleCloseSocialRemoveModal}
-        contentLabel="소셜 회원탈퇴"
-        style={{
-          overlay: { backgroundColor: "rgba(0, 0, 0, 0.5)" },
-          content: {
-            width: "520px", // 기존 크기보다 약 30% 증가
-            height: "fit-content",
-            maxHeight: "90vh",
-            margin: "auto",
-            padding: "30px", // 더 넓은 여백
-            borderRadius: "12px",
-            overflowY: "auto",
-          },
-        }}
-      >
-        <ModalContent>
-          <h2>소셜 회원 탈퇴</h2>
-          <form onSubmit={handleRemoveSubmit}>
-            <div>
-              <CheckboxContainer>
-                <Label htmlFor="socialConsent">
-                  회원 탈퇴를 진행하여 통합 로그인 계정에 <br/> 
-                  귀속된 모든 정보를 삭제하는데 동의합니다.
-                </Label>
-                <Checkbox
-                  type="checkbox"
-                  id="socialConsent"
-                  checked={isChecked}
-                  onChange={() => setIsChecked(!isChecked)}
-                />
-              </CheckboxContainer>
-                <Label htmlFor="socialConsent">
-                  {userId}/탈퇴합니다 를 입력하세요
-                </Label>
-              <InputContainer>
-                <PasswordInput
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  placeholder={`${userId}/탈퇴합니다 를 입력하세요`} // 변경
-                  required
-                />
-              </InputContainer>
-              {userInput && userInput !== `${userId}/탈퇴합니다` && (
-                <ErrorMessage>입력하신 내용이 정확하지 않습니다.</ErrorMessage>
-              )}
-              {error && <ErrorMessage>{error}</ErrorMessage>}
-              <ButtonGroup>
-                <SubmitButton
-                  type="submit"
-                  disabled={!isChecked || userInput !== `${userId}/탈퇴합니다`}
-                >
-                  회원 탈퇴
-                </SubmitButton>
-                <CancelButton type="button" onClick={handleCloseSocialRemoveModal}>
-                  취소
-                </CancelButton>
-              </ButtonGroup>
-            </div>
           </form>
         </ModalContent>
       </Modal>

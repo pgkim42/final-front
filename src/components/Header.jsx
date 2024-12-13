@@ -111,7 +111,7 @@ const Button = styled.button`
 
 const Header = () => {
 
-  const { name = '', userType = '', logout = () => {} } = useAuth() || {};
+  const { name = '', userType = '', logout = () => { }, companyName, companyAddress, ceoName, companyType } = useAuth() || {};
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -157,18 +157,19 @@ const Header = () => {
                 <StyledNavLink to="/resumes/edit">이력서 수정 테스트</StyledNavLink>
               </SubMenuItem>
               <SubMenuItem>
-                <StyledNavLink to="/resumes">이력서 목록</StyledNavLink>
+                <StyledNavLink to="/resume/list">이력서 목록</StyledNavLink>
               </SubMenuItem>
               <SubMenuItem>
                 <StyledNavLink to="/TestResume">이력서 API 테스트</StyledNavLink>
               </SubMenuItem>
             </SubMenu>
           </NavItem>
-          
+
           <NavItem>
             Member
             <SubMenu>
               <SubMenuItem>
+
                 <StyledNavLink to="/member/profile">마이페이지</StyledNavLink>
               </SubMenuItem>
             </SubMenu>
@@ -204,20 +205,29 @@ const Header = () => {
         </NavList>
 
         <RightSection>
-          {name ? (
+          {userType ? (
             <>
-              <span>{name} 님 안녕하세요</span>
-              <Button onClick={() => navigate('/profile')}>마이페이지</Button>
-              <Button onClick={handleLogout}>로그아웃</Button>
+              {userType === 'company' ? (
+                <>
+                  <span>{companyName} 님 안녕하세요</span>
+                  <Button onClick={() => navigate('/company')}>기업페이지</Button>
+                  <Button onClick={handleLogout}>로그아웃</Button>
+                </>
+              ) : (
+                <>
+                  <span>{name} 님 안녕하세요</span>
+                  <Button onClick={() => navigate('/profile')}>마이페이지</Button>
+                  <Button onClick={handleLogout}>로그아웃</Button>
+                </>
+              )}
             </>
           ) : (
             <>
               <Button onClick={() => navigate('/auth/sign-in')}>로그인</Button>
-              <Button primary onClick={() => navigate('/auth/sign-up')}>
-                회원가입
-              </Button>
+              <Button primary onClick={() => navigate('/auth/sign-up')}>회원가입</Button>
             </>
           )}
+
         </RightSection>
       </Nav>
     </HeaderContainer >

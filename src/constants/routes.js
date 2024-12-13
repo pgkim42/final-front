@@ -8,7 +8,7 @@ export const ROUTES = {
   },
 
   RESUME: {
-    LIST: '/resumes',
+    LIST: '/resume/list',
     POST: '/resumes/post',
     EDIT: '/resumes/:id/edit',
     READ: '/resumes/:id',

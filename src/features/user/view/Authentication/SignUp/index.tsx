@@ -274,7 +274,8 @@ export default function SignUp() {
       emailCheckResponse(response);
     } catch (error) {
       console.error('이메일 중복 체크 중 오류:', error);
-      alert('아이디와 이메일을 입력해주세요');
+      setEmailError(true);
+      setEmailMessage('중복된 이메일입니다.');
     } finally {
       setIsEmailChecking(false);
     }
@@ -369,6 +370,8 @@ export default function SignUp() {
       alert('회원가입 중 오류가 발생했습니다.');
       console.error(error);
     });
+
+    alert('회원가입을 축하드립니다.')
 
   };
 

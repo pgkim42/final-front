@@ -1,62 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-
-const dummyResumes = [
-  {
-    id: 1,
-    title: "프론트엔드 개발자 이력서",
-    company: "테크기업",
-    submissionDate: "2024-02-15",
-    status: "검토중",
-    jobTitle: "시니어 프론트엔드 개발자"
-  },
-  {
-    id: 2,
-    title: "백엔드 개발자 이력서",
-    company: "스타트업",
-    submissionDate: "2024-01-20",
-    status: "합격",
-    jobTitle: "주니어 백엔드 개발자"
-  },
-  {
-    id: 3,
-    title: "데이터 사이언티스트 이력서",
-    company: "금융회사",
-    submissionDate: "2024-03-10",
-    status: "불합격",
-    jobTitle: "데이터 사이언티스트"
-  },
-  {
-    id: 4,
-    title: "풀스택 개발자 이력서",
-    company: "IT솔루션",
-    submissionDate: "2024-03-15",
-    status: "검토중",
-    jobTitle: "풀스택 개발자"
-  },
-  {
-    id: 5,
-    title: "모바일 앱 개발자 이력서",
-    company: "모바일커머스",
-    submissionDate: "2024-03-18",
-    status: "합격",
-    jobTitle: "iOS 개발자"
-  },
-  {
-    id: 6,
-    title: "DevOps 엔지니어 이력서",
-    company: "클라우드서비스",
-    submissionDate: "2024-03-20",
-    status: "검토중",
-    jobTitle: "DevOps 엔지니어"
-  }
-];
-
-
+import { useNavigate } from 'react-router-dom';
 
 const ResumeList = () => {
-  const [resumes, setResumes] = useState(dummyResumes);
+  const [resumes, setResumes] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   // 상태값 상수 정의
   const RESUME_STATUS = {
@@ -66,26 +16,97 @@ const ResumeList = () => {
     REJECTED: 'rejected'
   };
 
-  const filterHandler = (status) => {
-    setFilter(status);
-  };
+  // 데이터 가져오기
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        console.log("토큰값:", token);
+    
+        if (!token) {
+          alert("로그인이 필요합니다.");
+          navigate("/auth/sign-in");
+          return;
+        }
+    
+        const response = await fetch("http://localhost:8080/apply/list", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+    
+        if (response.ok) {
+          const data = await response.json();
+          console.log("응답 데이터:", data); // 응답 데이터 로그 출력
+          setResumes(data); // 데이터를 상태로 저장
+        } else {
+          const errorData = await response.json();
+          console.error("오류 응답 데이터:", errorData);
+          setError(errorData.message || "지원서 목록을 가져오지 못했습니다.");
+        }
+      } catch (error) {
+        console.error("지원서 데이터를 가져오는 중 오류:", error);
+        setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+      }
+    };    
 
-  const handleDelete = (id) => {
-    setResumes(resumes.filter(resume => resume.id !== id));
-  };
+    fetchApplications();
+  }, [navigate]);
 
-  const getFilteredResumes = () => {
-    switch (filter) {
-      case RESUME_STATUS.PENDING:
-        return resumes.filter(resume => resume.status === '검토중');
-      case RESUME_STATUS.COMPLETED:
-        return resumes.filter(resume => resume.status === '합격');
-      case RESUME_STATUS.REJECTED:
-        return resumes.filter(resume => resume.status === '불합격');
-      default:
-        return resumes;
+
+
+const filterHandler = (status) => {
+  setFilter(status);
+};
+
+const handleDelete = async (applyCode) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`http://localhost:8080/apply/remove/${applyCode}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.ok) {
+      alert("이력서가 삭제되었습니다.");
+      setResumes(null); // 삭제 후 데이터 초기화
+    } else {
+      const errorData = await response.json();
+      alert(errorData.message || "이력서 삭제에 실패했습니다.");
     }
-  };
+  } catch (error) {
+    console.error("이력서 삭제 중 오류:", error);
+    alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
+  }
+};
+
+const getFilteredResumes = () => {
+  if (!Array.isArray(resumes)) {
+    return []; // resumes가 배열이 아니면 빈 배열 반환
+  }
+
+  console.log("현재 필터:", filter); // 현재 필터 상태 확인
+  console.log("전체 이력서:", resumes); // 원본 데이터 확인
+
+  switch (filter) {
+    case RESUME_STATUS.PENDING:
+      return resumes.filter((resume) => resume.applyStatus === "PENDING");
+    case RESUME_STATUS.COMPLETED:
+      return resumes.filter((resume) => resume.applyStatus === "COMPLETED");
+    case RESUME_STATUS.REJECTED:
+      return resumes.filter((resume) => resume.applyStatus === "REJECTED");
+    default:
+      return resumes; // 기본적으로 전체 배열 반환
+  }
+};
+
+useEffect(() => {
+  console.log("필터링된 이력서:", getFilteredResumes());
+}, [resumes, filter]);
 
   return (
     <Container>
@@ -119,19 +140,19 @@ const ResumeList = () => {
         {getFilteredResumes().map(resume => (
           <ResumeCard key={resume.id}>
             <ResumeHeader>
-              <h3>{resume.title}</h3>
+              <h3>회사: {resume.companyName}</h3>
               <StatusBadge status={resume.status}>{resume.status}</StatusBadge>
             </ResumeHeader>
             <ResumeContent>
-              <p><strong>회사:</strong> {resume.company}</p>
               <p><strong>직무:</strong> {resume.jobTitle}</p>
-              <p><strong>제출일:</strong> {resume.submissionDate}</p>
+              <p><strong>제출일:</strong> {new Date(resume.submissionDate).toLocaleDateString()}</p>
             </ResumeContent>
             <ActionButtons>
-              <ActionButton onClick={() => window.open(`/resume/${resume.id}`)}>
+              <ActionButton onClick={() => window.open(`/resume/${resume.resumeCode}`)}>
                 조회
               </ActionButton>
-              <ActionButton onClick={() => handleDelete(resume.id)}>
+              <ActionButton
+                onClick={() => window.confirm('정말 삭제하시겠습니까?') && handleDelete(resume.applyCode)}>
                 삭제
               </ActionButton>
             </ActionButtons>

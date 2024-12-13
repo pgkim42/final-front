@@ -10,7 +10,7 @@ const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
 
 const UserProfileEdit = () => {
   
-  const { userId, name, email, userType, readOnly , cancelAccount} = useAuth();
+  const { userId, name, email, userType, companyName, companyType, ceoName, companyAddress, readOnly , cancelAccount} = useAuth();
   const navigate = useNavigate();
 
   const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false); // 소셜 회원탈퇴 모달 상태
@@ -149,42 +149,25 @@ const UserProfileEdit = () => {
       <Container>
         <MainContent>
           <Form onSubmit={handleSubmit}>
-            {activeSection === 'profile' ? (
+            {activeSection === 'profile' && (
               <Section>
                 <SectionTitle>기본 정보</SectionTitle>
                 <FormGroup>
                   <Label>아이디</Label>
-                  <Input
-                    type="text"
-                    value={userId}
-                    readOnly={readOnly}
-                  />
-                  {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+                  <Input type="text" value={userId} readOnly={readOnly} />
                 </FormGroup>
-
                 <FormGroup>
                   <Label>이름</Label>
-                  <Input
-                    type="text"
-                    value={name}
-                    readOnly={readOnly}
-                  />
-                  {errors.name && <ErrorMessage>{errors.name}</ErrorMessage>}
+                  <Input type="text" value={name} readOnly={readOnly} />
                 </FormGroup>
-
                 <FormGroup>
                   <Label>이메일</Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    readOnly={readOnly}
-                  />
-                  {errors.email && <ErrorMessage>{errors.email}</ErrorMessage>}
+                  <Input type="email" value={email} readOnly={readOnly} />
                 </FormGroup>
-
               </Section>
-            ) : (
+            )}
 
+            {activeSection === 'password' && (
               <Section>
                 <SectionTitle>비밀번호 변경</SectionTitle>
                 <FormGroup>
@@ -193,34 +176,27 @@ const UserProfileEdit = () => {
                     type="password"
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
-                    hasError={!!errors.currentPassword}
                   />
-                  {errors.currentPassword && <ErrorMessage>{errors.currentPassword}</ErrorMessage>}
                 </FormGroup>
-
                 <FormGroup>
                   <Label>새 비밀번호</Label>
                   <Input
                     type="password"
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-                    hasError={!!errors.newPassword}
                   />
-                  {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
                 </FormGroup>
-
                 <FormGroup>
                   <Label>새 비밀번호 확인</Label>
                   <Input
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    hasError={!!errors.confirmPassword}
                   />
-                  {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
                 </FormGroup>
               </Section>
             )}
+
             <ButtonGroup>
               <SaveButton type="submit" disabled={loading}>
                 {loading ? "저장 중..." : "저장하기"}
@@ -228,7 +204,6 @@ const UserProfileEdit = () => {
               <CancelButton type="button" onClick={() => navigate("/mypage")}>
                 취소
               </CancelButton>
-                <DeleteButton onClick={handleOpenSocialRemoveModal}>회원 탈퇴</DeleteButton>
             </ButtonGroup>
           </Form>
         </MainContent>
@@ -241,12 +216,23 @@ const UserProfileEdit = () => {
             >
               기본 정보
             </NavItem>
-            <NavItem
-              active={activeSection === 'password'}
-              onClick={() => setActiveSection('password')}
-            >
-              비밀번호 변경
-            </NavItem>
+            {userType === 'company' && (
+              <NavItem
+                active={activeSection === 'companyprofile'}
+                onClick={() => setActiveSection('companyprofile')}
+              >
+                기업 정보
+              </NavItem>
+            )}
+            {['dev', 'company'].includes(userType) && (
+              <NavItem
+                active={activeSection === 'password'}
+                onClick={() => setActiveSection('password')}
+              >
+                비밀번호 변경
+              </NavItem>
+            )}
+            <DeleteButton onClick={handleOpenSocialRemoveModal}>회원 탈퇴</DeleteButton>
           </NavMenu>
         </Sidebar>
 
@@ -368,6 +354,24 @@ const NavItem = styled.button`
 
   &:hover {
     background: ${props => props.active ? '#2b6cb0' : '#f7fafc'};
+  }
+`;
+
+const NavRemoveItem = styled.button`
+  padding: 1rem 1.5rem;
+  text-align: left;
+  background: ${props => props.active ? '#3182ce' : 'transparent'};
+  color: ${props => props.active ? 'white' : '#4a5568'};
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #fc0f03;
+    color : #ffffff;
+    transition: 1s;
   }
 `;
 

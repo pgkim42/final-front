@@ -4,7 +4,8 @@ export default interface SignInResponse extends Response {
 
   token : string;
   expirationTime : number;
-  userId : string;
+  userId? : string;
+  userCode : string;
   type : string;
   name : string;
   email : string;

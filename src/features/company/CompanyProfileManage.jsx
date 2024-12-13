@@ -2,101 +2,102 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../pages/AuthContent';
 
 const CompanyProfileManage = () => {
   const navigate = useNavigate();
+  const { companyName, companyAddress, ceoName, companyType } = useAuth();
+
   const [formData, setFormData] = useState({
-    name: "테크스타트",
-    logo: "https://via.placeholder.com/150",
-    description: "혁신적인 기술 솔루션을 제공하는 기업입니다.",
-    industry: "IT/소프트웨어",
-    website: "https://techstart.co.kr",
-    address: "서울시 강남구",
-    employees: "100-200명",
-    foundedYear: "2018"
+    name: companyName,
+    address: companyAddress,
+    ceo: ceoName,
+    type: companyType,
   });
 
+  const [isEditMode, setIsEditMode] = useState(false); // 수정/저장 모드 상태
   const [errors, setErrors] = useState({});
-  const [previewImage, setPreviewImage] = useState(formData.logo);
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        setFormData({ ...formData, logo: reader.result });
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prevFormData) => ({
+      ...prevFormData,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // API 호출 로직
-    navigate('/company/profile');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        navigate('/auth/sign-in');
+        return;
+      }
+
+      const response = await fetch('http://localhost:8080/api/v1/company/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        alert(`저장 중 오류가 발생했습니다: ${errorData.message}`);
+        return;
+      }
+
+      alert('정보가 성공적으로 저장되었습니다.');
+      setIsEditMode(false); // 저장 후 수정 모드 종료
+    } catch (error) {
+      console.error('저장 중 오류 발생:', error);
+      alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
   };
 
   return (
     <CompanyLayout>
       <Container>
-        <Title>기업 정보 수정</Title>
+        <Title>기업 정보 관리</Title>
         <Form onSubmit={handleSubmit}>
           <Section>
             <SectionTitle>기본 정보</SectionTitle>
-
-            <LogoSection>
-              <LogoPreview src={previewImage} alt="Company Logo" />
-              <LogoUpload>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  id="logo-upload"
-                  hidden
-                />
-                <UploadButton htmlFor="logo-upload">
-                  로고 이미지 변경
-                </UploadButton>
-              </LogoUpload>
-            </LogoSection>
 
             <FormGroup>
               <Label>회사명</Label>
               <Input
                 type="text"
+                name="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
               />
             </FormGroup>
 
             <FormGroup>
-              <Label>업종</Label>
+              <Label>기업형태</Label>
               <Input
                 type="text"
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                name="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
               />
             </FormGroup>
 
             <FormGroup>
-              <Label>웹사이트</Label>
+              <Label>대표명</Label>
               <Input
-                type="url"
-                value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              />
-            </FormGroup>
-          </Section>
-
-          <Section>
-            <SectionTitle>상세 정보</SectionTitle>
-            <FormGroup>
-              <Label>회사 소개</Label>
-              <TextArea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={5}
+                type="text"
+                name="ceo"
+                value={formData.ceo}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
               />
             </FormGroup>
 
@@ -104,32 +105,22 @@ const CompanyProfileManage = () => {
               <Label>주소</Label>
               <Input
                 type="text"
+                name="address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>직원수</Label>
-              <Input
-                type="text"
-                value={formData.employees}
-                onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
-              />
-            </FormGroup>
-
-            <FormGroup>
-              <Label>설립연도</Label>
-              <Input
-                type="text"
-                value={formData.foundedYear}
-                onChange={(e) => setFormData({ ...formData, foundedYear: e.target.value })}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
               />
             </FormGroup>
           </Section>
 
           <ButtonGroup>
-            <SaveButton type="submit">저장하기</SaveButton>
+            {isEditMode ? (
+              <SaveButton type="submit">저장하기</SaveButton>
+            ) : (
+              <EditButton type="button" onClick={() => setIsEditMode(true)}>
+                수정하기
+              </EditButton>
+            )}
             <CancelButton type="button" onClick={() => navigate('/company/profile')}>
               취소
             </CancelButton>
@@ -139,7 +130,6 @@ const CompanyProfileManage = () => {
     </CompanyLayout>
   );
 };
-
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -287,6 +277,19 @@ const CancelButton = styled.button`
 
   &:hover {
     background: #f7fafc;
+  }
+`;
+
+const EditButton = styled.button`
+  background: #48bb78;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #2f855a;
   }
 `;
 
