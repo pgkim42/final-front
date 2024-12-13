@@ -1,3 +1,5 @@
+import axios from "axios";
+
 // 고유 ID 생성 함수
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -48,8 +50,23 @@ export const createResume = (resumeData) => {
 
 // 이력서 조회
 export const getResume = (id) => {
-  return delay(() => {
-    const resumes = getResumes();
+  return delay(async () => {
+
+    let resumes = null;
+    // const resumes = getResumes(); // 수정 (스토리지x API 호출)
+
+    const response = await axios.get(`http://localhost:8080/resume/list`, {
+      headers: {
+        Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ6enoiLCJyb2xlIjoiUk9MRV9VU0VSIiwiaWF0IjoxNzM0MDg5NjYxLCJleHAiOjE3MzQwOTMyNjEsInVzZXJDb2RlIjoiZGV2X3p6eiJ9.bw5MqzPk41tmSu-_Ew7-Bra-hU-dW2UqYHhgVxYIY1s'
+      }
+    });
+
+    if (response.status === 200) {
+      resumes = response.data
+    } else {
+      throw new Error(`api error: ${response.status} ${response.statusText}`);
+    }
+
     const resume = resumes.find((r) => r.id === id);
     if (resume) {
       return resume;

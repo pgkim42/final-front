@@ -1,161 +1,95 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { format } from 'date-fns';
+import { useSelector } from 'react-redux';
 
+// 가짜데이터 -> API 호출
+// const dummyResumes = [
+//   {
+//     id: 1,
+//     title: "프론트엔드 개발자 이력서",
+//     createdAt: "2024-02-15",
+//     updatedAt: "2024-03-10",
+//     isPublic: true,
+//     category: "개발"
+//   },
+//   {
+//     id: 2,
+//     title: "신입 개발자 이력서",
+//     createdAt: "2024-01-20",
+//     updatedAt: "2024-03-15",
+//     isPublic: false,
+//     category: "개발"
+//   }
+// ];
+
+const formatLocalDateTime = (localDateTime) => {
+  if(!localDateTime) return "없음";
+  const date = new Date(localDateTime);
+  return format(date, 'yyyy-mm-dd'); // date-fns의 format 함수 사용
+};
+
+// 컴포넌트 시작
 const ResumeList = () => {
+  // 초기값 설정
   const [resumes, setResumes] = useState([]);
-  const [filter, setFilter] = useState('all');
-  const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
-  // 상태값 상수 정의
-  const RESUME_STATUS = {
-    ALL: 'all',
-    PENDING: 'pending',
-    COMPLETED: 'completed',
-    REJECTED: 'rejected'
-  };
+  const token = localStorage.getItem('token');
 
-  // 데이터 가져오기
-  useEffect(() => {
-    const fetchApplications = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        console.log("토큰값:", token);
-    
-        if (!token) {
-          alert("로그인이 필요합니다.");
-          navigate("/auth/sign-in");
-          return;
+  // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
+  useEffect(()=>{
+    const apicall = async () => {
+      // Postman 보고 API 주소 수정
+      const response = await axios.get(`http://localhost:8080/resume/list`, {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-    
-        const response = await fetch("http://localhost:8080/apply/list", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-    
-        if (response.ok) {
-          const data = await response.json();
-          console.log("응답 데이터:", data); // 응답 데이터 로그 출력
-          setResumes(data); // 데이터를 상태로 저장
-        } else {
-          const errorData = await response.json();
-          console.error("오류 응답 데이터:", errorData);
-          setError(errorData.message || "지원서 목록을 가져오지 못했습니다.");
-        }
-      } catch (error) {
-        console.error("지원서 데이터를 가져오는 중 오류:", error);
-        setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
+      });
+      if (response.status === 200) {
+        setResumes(response.data);
+      } else {
+        throw new Error(`api error: ${response.status} ${response.statusText}`);
       }
-    };    
-
-    fetchApplications();
-  }, [navigate]);
-
-
-
-const filterHandler = (status) => {
-  setFilter(status);
-};
-
-const handleDelete = async (applyCode) => {
-  try {
-    const token = localStorage.getItem("token");
-
-    const response = await fetch(`http://localhost:8080/apply/remove/${applyCode}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (response.ok) {
-      alert("이력서가 삭제되었습니다.");
-      setResumes(null); // 삭제 후 데이터 초기화
-    } else {
-      const errorData = await response.json();
-      alert(errorData.message || "이력서 삭제에 실패했습니다.");
+    
     }
-  } catch (error) {
-    console.error("이력서 삭제 중 오류:", error);
-    alert("서버 오류가 발생했습니다. 다시 시도해주세요.");
-  }
-};
+    apicall();
+  }, []);
 
-const getFilteredResumes = () => {
-  if (!Array.isArray(resumes)) {
-    return []; // resumes가 배열이 아니면 빈 배열 반환
-  }
-
-  console.log("현재 필터:", filter); // 현재 필터 상태 확인
-  console.log("전체 이력서:", resumes); // 원본 데이터 확인
-
-  switch (filter) {
-    case RESUME_STATUS.PENDING:
-      return resumes.filter((resume) => resume.applyStatus === "PENDING");
-    case RESUME_STATUS.COMPLETED:
-      return resumes.filter((resume) => resume.applyStatus === "COMPLETED");
-    case RESUME_STATUS.REJECTED:
-      return resumes.filter((resume) => resume.applyStatus === "REJECTED");
-    default:
-      return resumes; // 기본적으로 전체 배열 반환
-  }
-};
-
-useEffect(() => {
-  console.log("필터링된 이력서:", getFilteredResumes());
-}, [resumes, filter]);
+  const handleDelete = (id) => {
+    if (window.confirm('이력서를 삭제하시겠습니까?')) {
+      setResumes(resumes.filter(resume => resume.id !== id));
+    }
+  };
 
   return (
     <Container>
       <Header>
-        <h1>제출한 이력서</h1>
-        <FilterContainer>
-          <FilterButton
-            active={filter === RESUME_STATUS.ALL}
-            onClick={() => filterHandler(RESUME_STATUS.ALL)}>
-            전체
-          </FilterButton>
-          <FilterButton
-            active={filter === RESUME_STATUS.PENDING}
-            onClick={() => filterHandler(RESUME_STATUS.PENDING)}>
-            검토중
-          </FilterButton>
-          <FilterButton
-            active={filter === RESUME_STATUS.COMPLETED}
-            onClick={() => filterHandler(RESUME_STATUS.COMPLETED)}>
-            합격
-          </FilterButton>
-          <FilterButton
-            active={filter === RESUME_STATUS.REJECTED}
-            onClick={() => filterHandler(RESUME_STATUS.REJECTED)}>
-            불합격
-          </FilterButton>
-        </FilterContainer>
+        <Title>내 이력서 관리</Title>
+        <CreateButton to="/resumes/post">새 이력서 작성</CreateButton>
       </Header>
 
       <ResumeGrid>
-        {getFilteredResumes().map(resume => (
-          <ResumeCard key={resume.id}>
-            <ResumeHeader>
-              <h3>회사: {resume.companyName}</h3>
-              <StatusBadge status={resume.status}>{resume.status}</StatusBadge>
-            </ResumeHeader>
-            <ResumeContent>
-              <p><strong>직무:</strong> {resume.jobTitle}</p>
-              <p><strong>제출일:</strong> {new Date(resume.submissionDate).toLocaleDateString()}</p>
-            </ResumeContent>
-            <ActionButtons>
-              <ActionButton onClick={() => window.open(`/resume/${resume.resumeCode}`)}>
-                조회
+        {resumes.map(resume => (
+          <ResumeCard key={resume.resumeCode}>
+            <ResumeInfo>
+              <ResumeTitle>{resume.introduce}</ResumeTitle>
+              <MetaInfo>
+                <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
+              </MetaInfo>
+            </ResumeInfo>
+            <ButtonGroup>
+              <ActionButton as={Link} to={`/resumes/edit/${resume.resumeCode}`} className="edit">
+                수정
               </ActionButton>
-              <ActionButton
-                onClick={() => window.confirm('정말 삭제하시겠습니까?') && handleDelete(resume.applyCode)}>
+              <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">
+                상세
+              </ActionButton>
+              <ActionButton onClick={() => handleDelete(resume.id)} className="delete">
                 삭제
               </ActionButton>
-            </ActionButtons>
+            </ButtonGroup>
           </ResumeCard>
         ))}
       </ResumeGrid>
@@ -176,21 +110,22 @@ const Header = styled.div`
   margin-bottom: 2rem;
 `;
 
-const FilterContainer = styled.div`
-  display: flex;
-  gap: 1rem;
+const Title = styled.h1`
+  font-size: 2rem;
+  color: #2d3748;
 `;
 
-const FilterButton = styled.button`
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-  background: ${props => props.active ? '#2563eb' : '#f3f4f6'};
-  color: ${props => props.active ? 'white' : '#4b5563'};
-  cursor: pointer;
-  
+const CreateButton = styled(Link)`
+  padding: 0.75rem 1.5rem;
+  background: #3182ce;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+
   &:hover {
-    background: ${props => props.active ? '#1d4ed8' : '#e5e7eb'};
+    background: #2c5282;
   }
 `;
 
@@ -202,66 +137,92 @@ const ResumeGrid = styled.div`
 
 const ResumeCard = styled.div`
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   padding: 1.5rem;
-`;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
 
-const ResumeHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const StatusBadge = styled.span`
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  background: ${props => {
-    switch (props.status) {
-      case '검토중': return '#fef3c7';
-      case '합격': return '#d1fae5';
-      case '불합격': return '#fee2e2';
-      default: return '#f3f4f6';
-    }
-  }};
-  color: ${props => {
-    switch (props.status) {
-      case '검토중': return '#92400e';
-      case '합격': return '#065f46';
-      case '불합격': return '#991b1b';
-      default: return '#1f2937';
-    }
-  }};
-`;
-
-const ResumeContent = styled.div`
-  margin-bottom: 1rem;
-  
-  p {
-    margin: 0.5rem 0;
-    color: #4b5563;
+  &:hover {
+    transform: translateY(-4px);
   }
 `;
 
-const ActionButtons = styled.div`
+const ResumeInfo = styled.div`
+  margin-bottom: 1.5rem;
+`;
+
+const ResumeTitle = styled.h3`
+  font-size: 1.25rem;
+  color: #2d3748;
+  margin-bottom: 1rem;
+`;
+
+const MetaInfo = styled.div`
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const UpdateDate = styled.span`
+  color: #718096;
+  font-size: 0.875rem;
+`;
+
+const Status = styled.span`
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  background: ${props => props.isPublic ? '#e6fffa' : '#edf2f7'};
+  color: ${props => props.isPublic ? '#047857' : '#4a5568'};
+`;
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 0.75rem;
 `;
 
 const ActionButton = styled.button`
   flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 4px;
-  background: white;
-  color: #4b5563;
+  padding: 0.75rem;
+  border: 1px solid;
+  border-radius: 6px;
+  font-weight: 500;
   cursor: pointer;
-  
-  &:hover {
-    background: #f9fafb;
+  transition: all 0.2s;
+  text-align: center; // 텍스트 중앙 정렬 추가
+  text-decoration: none; // Link 컴포넌트 스타일링을 위해
+  display: flex; // flexbox로 정렬
+  justify-content: center; // 가로 중앙 정렬
+  align-items: center; // 세로 중앙 정렬
+
+  &.edit {
+    border-color: #3182ce;
+    color: #3182ce;
+    background: white;
+
+    &:hover {
+      background: #ebf8ff;
+    }
+  }
+
+  &.preview {
+    border-color: #48bb78;
+    color: #48bb78;
+    background: white;
+
+    &:hover {
+      background: #f0fff4;
+    }
+  }
+
+  &.delete {
+    border-color: #e53e3e;
+    color: #e53e3e;
+    background: white;
+
+    &:hover {
+      background: #fff5f5;
+    }
   }
 `;
 

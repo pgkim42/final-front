@@ -157,7 +157,7 @@ const Header = () => {
                 <StyledNavLink to="/resumes/edit">이력서 수정 테스트</StyledNavLink>
               </SubMenuItem>
               <SubMenuItem>
-                <StyledNavLink to="/resume/list">이력서 목록</StyledNavLink>
+                <StyledNavLink to="/resumes/list">이력서 목록</StyledNavLink>
               </SubMenuItem>
               <SubMenuItem>
                 <StyledNavLink to="/TestResume">이력서 API 테스트</StyledNavLink>

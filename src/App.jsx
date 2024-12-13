@@ -68,7 +68,7 @@ function App() {
           <Route path={ROUTES.RESUME.LIST} element={<ResumeList />} />
           <Route path={ROUTES.RESUME.POST} element={<ResumePosting />} />
           {/* <Route path={ROUTES.RESUME.EDIT} element={<ResumeEdit />} /> */}
-          {/* <Route path={ROUTES.RESUME.READ} element={<ResumeRead />} /> */}
+          <Route path={ROUTES.RESUME.READ} element={<ResumeRead />} />
           <Route path={ROUTES.RESUME.EDIT_TEST} element={<ResumeEdit />} />
           <Route path={ROUTES.RESUME.READ_TEST} element={<ResumeRead />} />
 

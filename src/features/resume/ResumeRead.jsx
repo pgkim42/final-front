@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.bubble.css';
-import { getResume } from '../../mockApi';
 import PropTypes from 'prop-types';
 import {
   GlobalStyle,
@@ -10,6 +9,8 @@ import {
   Title,
   Label
 } from '../../styles/ResumeStyles';
+import { useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const Section = styled.div`
   margin-bottom: 24px;
@@ -52,24 +53,45 @@ const LoadingText = styled.p`
   font-size: 24px;
 `;
 
-const ResumeRead = ({ resumeId, onNext }) => {
+// 이력서 상세
+
+const ResumeRead = () => {
+  // URL 주소에서 파라미터 추출? 이력서코드
+  const { resumeCode } = useParams();
+  console.log(resumeCode);
+
   const [resumeData, setResumeData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchResumeData = async () => {
-      try {
-        const data = await getResume(resumeId);
-        setResumeData(data);
+    const apicall = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('Token not found. Please log in.');
         setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`http://localhost:8080/resume/read/${resumeCode}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (response.status === 200) {
+          setResumeData(response.data);
+        } else {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
       } catch (error) {
-        console.error('이력서 데이터를 불러오는 중 오류가 발생했습니다:', error);
+        console.error('Error fetching resume:', error);
+      } finally {
         setIsLoading(false);
       }
     };
 
-    fetchResumeData();
-  }, [resumeId]);
+    apicall();
+  }, [resumeCode]); // 이력서코드 변경되면 API 호출
 
   if (isLoading) {
     return (
@@ -80,95 +102,89 @@ const ResumeRead = ({ resumeId, onNext }) => {
   }
 
   if (!resumeData) {
-    return <div>이력서를 찾을 수 없습니다.</div>;
+    return <Container>No resume found.</Container>;
   }
 
   return (
-    <>
-      <GlobalStyle />
-      <Container>
-        <Title>이력서 상세 정보</Title>
+    <Container>
+      <h1>Resume Detail</h1>
+      <Section>
+        <SectionTitle>Introduction</SectionTitle>
+        <Value>{resumeData.introduce}</Value>
+      </Section>
 
-        <Section>
-          <SectionTitle>상세 내용</SectionTitle>
-          <ReactQuill
-            value={resumeData.content}
-            readOnly={true}
-            theme="bubble"
-          />
-        </Section>
+      <Section>
+        <SectionTitle>Work</SectionTitle>
+        <Value>{resumeData.work}</Value>
+      </Section>
 
-        <Section>
-          <SectionTitle>경력</SectionTitle>
-          {resumeData.careers.map((career, index) => (
-            <ItemContainer key={index}>
-              <Label>회사명</Label>
-              <Value>{career.company}</Value>
-              <Label>직위</Label>
-              <Value>{career.position}</Value>
-              <Label>근무 기간</Label>
-              <Value>{career.period}</Value>
-              <Label>주요 업무</Label>
-              <Value>{career.duties}</Value>
-            </ItemContainer>
-          ))}
-        </Section>
+      <Section>
+        <SectionTitle>Experience</SectionTitle>
+        {resumeData.experienceDetail.map((exp, index) => (
+          <ItemContainer key={index}>
+            <Value><strong>Company:</strong> {exp.company}</Value>
+            <Value><strong>Department:</strong> {exp.department}</Value>
+            <Value><strong>Position:</strong> {exp.position}</Value>
+            <Value><strong>Responsibility:</strong> {exp.responsibility}</Value>
+            <Value><strong>Salary:</strong> {exp.salary}</Value>
+            <Value><strong>Duration:</strong> {exp.startDate} - {exp.endDate}</Value>
+          </ItemContainer>
+        ))}
+      </Section>
 
-        <Section>
-          <SectionTitle>학력</SectionTitle>
-          {resumeData.educations.map((education, index) => (
-            <ItemContainer key={index}>
-              <Label>학교명</Label>
-              <Value>{education.school}</Value>
-              <Label>전공</Label>
-              <Value>{education.major}</Value>
-              <Label>학위</Label>
-              <Value>{education.degree}</Value>
-              <Label>졸업년도</Label>
-              <Value>{education.graduationYear}</Value>
-            </ItemContainer>
-          ))}
-        </Section>
+      <Section>
+        <SectionTitle>Education</SectionTitle>
+        {resumeData.education.map((edu, index) => (
+          <ItemContainer key={index}>
+            <Value><strong>School:</strong> {edu.school}</Value>
+            <Value><strong>Major:</strong> {edu.major}</Value>
+            <Value><strong>Date:</strong> {edu.date}</Value>
+          </ItemContainer>
+        ))}
+      </Section>
 
-        <Section>
-          <SectionTitle>자격증</SectionTitle>
-          {resumeData.certifications.map((certification, index) => (
-            <ItemContainer key={index}>
-              <Label>자격증명</Label>
-              <Value>{certification.name}</Value>
-              <Label>취득일</Label>
-              <Value>{certification.date}</Value>
-              <Label>발급기관</Label>
-              <Value>{certification.issuer}</Value>
-            </ItemContainer>
-          ))}
-        </Section>
+      <Section>
+        <SectionTitle>Certifications</SectionTitle>
+        {resumeData.certifications.map((cert, index) => (
+          <ItemContainer key={index}>
+            <Value><strong>Name:</strong> {cert.certificationName}</Value>
+            <Value><strong>Issued Date:</strong> {cert.issueDate}</Value>
+            <Value><strong>Issuer:</strong> {cert.issuer}</Value>
+          </ItemContainer>
+        ))}
+      </Section>
 
-        <Section>
-          <SectionTitle>스킬</SectionTitle>
-          <Value>{resumeData.skills}</Value>
-        </Section>
+      <Section>
+        <SectionTitle>Language Skills</SectionTitle>
+        {resumeData.languageSkills.map((lang, index) => (
+          <ItemContainer key={index}>
+            <Value><strong>Language:</strong> {lang.language}</Value>
+            <Value><strong>Level:</strong> {lang.level}</Value>
+          </ItemContainer>
+        ))}
+      </Section>
 
-        <Section>
-          <SectionTitle>이력서 파일</SectionTitle>
-          <Value>{resumeData.resumePdf ? resumeData.resumePdf : '파일 없음'}</Value>
-        </Section>
+      <Section>
+        <SectionTitle>Skills</SectionTitle>
+        <Value>{resumeData.skill}</Value>
+      </Section>
 
-        <Section>
-          <SectionTitle>언어능력</SectionTitle>
-          <Value>{resumeData.languageSkills}</Value>
-        </Section>
-      </Container>
-      {onNext && <button onClick={onNext}>다음 단계로</button>}
-    </>
+      <Section>
+        <SectionTitle>Job Category</SectionTitle>
+        <Value>{resumeData.jobCategory}</Value>
+      </Section>
+
+      <Section>
+        <SectionTitle>Last Updated</SectionTitle>
+        <Value>{new Date(resumeData.updateDate).toLocaleString()}</Value>
+      </Section>
+
+      <Section>
+        <SectionTitle>Uploaded File</SectionTitle>
+        <Value>{resumeData.uploadFileName || 'No file uploaded.'}</Value>
+      </Section>
+    </Container>
   );
-};
-
-
-
-ResumeRead.propTypes = {
-  resumeId: PropTypes.string.isRequired,
-  onNext: PropTypes.func
 };
 
 export default ResumeRead;

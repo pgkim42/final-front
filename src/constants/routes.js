@@ -9,10 +9,10 @@ export const ROUTES = {
   },
 
   RESUME: {
-    LIST: '/resume/list',
+    LIST: '/resumes/list',
     POST: '/resumes/post',
-    EDIT: '/resumes/:id/edit',
-    READ: '/resumes/:id',
+    EDIT: '/resumes/:resumeCode/edit',
+    READ: '/resumes/:resumeCode',
 
     READ_TEST: 'resumes/read',
     EDIT_TEST: 'resumes/edit',

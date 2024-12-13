@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import ReactQuill from 'react-quill';
+import axios from 'axios';
 import 'react-quill/dist/quill.snow.css';
 import {
   GlobalStyle,
@@ -11,7 +12,7 @@ import {
   FormGroup,
   Input,
   Button,
-  QuillWrapper
+  QuillWrapper,
 } from '../../styles/ResumeStyles';
 
 const AddButton = styled(Button)`
@@ -41,8 +42,8 @@ const MODULES = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     ['link'],
-    ['clean']
-  ]
+    ['clean'],
+  ],
 };
 
 FormGroup.propTypes = {
@@ -50,7 +51,6 @@ FormGroup.propTypes = {
   children: PropTypes.node.isRequired,
 };
 
-// Main Component
 const ResumePosting = ({ onSubmit }) => {
   const createEmptyCareer = () => ({ company: '', position: '', period: '', duties: '' });
   const createEmptyEducation = () => ({ school: '', major: '', degree: '', graduationYear: '' });
@@ -63,6 +63,8 @@ const ResumePosting = ({ onSubmit }) => {
   const [skills, setSkills] = useState('');
   const [languageSkills, setLanguageSkills] = useState('');
   const [resumePdf, setResumePdf] = useState(null);
+
+  const token = localStorage.getItem('token');
 
   const handleInputChange = (setter) => (index, field, value) => {
     setter((prevState) => {
@@ -88,18 +90,69 @@ const ResumePosting = ({ onSubmit }) => {
     return null;
   };
 
-  const handleSubmit = async (e) => {
-    console.log('Received resume data:', resumeData);
-    e.preventDefault();
-    const resumeData = { content, careers, educations, certifications, skills, languageSkills, resumePdf };
-    const error = validateResume(resumeData);
-    if (error) {
-      alert(error);
-      return;
-    }
-    onSubmit(resumeData);
-  };
 
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const resumeData = {
+      dto: {
+        resumeCode: null,
+        introduce: content,
+        work: "백엔드 개발 업무",
+        link: "https://github.com/username",
+        workExperience: careers.length,
+        experienceDetail: careers.map((career) => ({
+          company: career.company,
+          department: "IT", // 임의 값 (필요 시 사용자 입력 추가 가능)
+          startDate: "2020.01", // DatePicker 추가로 개선 가능
+          endDate: "2022.12",
+          position: career.position,
+          responsibility: career.duties,
+          salary: "5000만원", // 사용자가 입력할 수 있도록 수정 가능
+        })),
+        education: educations.map((education) => ({
+          date: "2015.03.01 ~ 2019.02.28", // Placeholder
+          school: education.school,
+          major: education.major,
+        })),
+        certifications: certifications.map((cert) => ({
+          certificationName: cert.name,
+          issueDate: cert.date,
+          issuer: cert.issuer,
+        })),
+        languageSkills: [
+          { language: "영어", level: "유창함" },
+          { language: "일본어", level: "비즈니스 회화" },
+        ],
+        skill: skills,
+        jobCategory: "백엔드 개발",
+        createDate: null,
+        updateDate: null,
+        userCode: "12345",
+      },
+    };
+
+    const formData = new FormData();
+    formData.append("dto", JSON.stringify(resumeData)); // JSON 데이터
+    formData.append("resumeFolder", resumePdf); // PDF 파일
+
+    try {
+        const response = await axios.post("http://localhost:8080/resume/register", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("응답 데이터:", response.data);
+      alert("이력서 등록 성공!");
+      onSubmit(resumeData); // 성공 시 부모 컴포넌트로 데이터 전달
+    } catch (error) {
+      console.error("API 요청 중 오류 발생:", error);
+      alert("이력서 등록에 실패했습니다.");
+    }
+  };
 
   return (
     <>
@@ -239,6 +292,7 @@ const ResumePosting = ({ onSubmit }) => {
     </>
   );
 };
+
 ResumePosting.propTypes = {
   onSubmit: PropTypes.func.isRequired,
 };

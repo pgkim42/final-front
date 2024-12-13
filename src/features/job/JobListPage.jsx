@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
-import { format } from 'date-fns';
-
 const ITEMS_PER_PAGE = 9;
 
 const JobListPage = () => {
