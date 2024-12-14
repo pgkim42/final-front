@@ -3,15 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "./AuthContent";
 
 const OAuthCallback = () => {
-  const { token, userCode, email, name, type, expirationTime } = useParams();
+  const { name, type, email, userId, userCode, token } = useParams();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [alertShown, setAlertShown] = useState(false);
 
   useEffect(() => {
-    console.log("OAuthCallback 데이터 수신:", { token, userCode, email, name, type, expirationTime });
+    console.log("OAuthCallback 데이터 수신:", { name, type, email, userId, userCode, token });
 
-    if (!token || !expirationTime || !userCode || !email || !name || !type) {
+    if (!token || !userCode || !email || !name || !type) {
       console.error("필수 값 누락!");
       navigate("/error");
       return;
@@ -21,14 +21,14 @@ const OAuthCallback = () => {
       try {
         // 로컬 스토리지 저장
         localStorage.setItem("token", token);
-        localStorage.setItem("expirationTime", expirationTime);
+        // localStorage.setItem("expirationTime", expirationTime);
         localStorage.setItem("userCode", userCode);
         localStorage.setItem("email", email);
         localStorage.setItem("name", name);
         localStorage.setItem("type", type);
 
         // AuthContext 상태 업데이트
-        login(name, type, email, userCode, token);
+        login(name, type, email, userId, userCode, token);
 
         // 메시지는 처음 한 번만 출력
         alert(`${name} 님 로그인을 환영합니다!`);

@@ -19,6 +19,7 @@ export const ROUTES = {
   },
 
   PROFILE: {
+    SOCIAL_MY_PAGE: '/socialprofile',
     MY_PAGE: '/profile',
     EDIT: '/profile/edit',
     APPLICATIONS: '/profile/applications',
@@ -30,7 +31,6 @@ export const ROUTES = {
   USER: {
     REGISTER: '/auth/sign-up',
     LOGIN: '/auth/sign-in',
-    SOCIALLOGIN: '/auth/oauth-response/:token/:userCode/:email/:name/:type/:expirationTime',
   },
 
   ADMIN: {
