@@ -10,4 +10,5 @@ export default interface SignUpRequest {
   companyName?: string; // 기업회원 전용
   ceoName?: string; // 기업회원 전용
   companyAddress?: string; // 기업회원 전용
+  companyProfileCode?: number; // 기업회원 전용
 }

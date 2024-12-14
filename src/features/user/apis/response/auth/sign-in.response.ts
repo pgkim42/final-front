@@ -16,5 +16,5 @@ export default interface SignInResponse extends Response {
   companyName?: string; // 회사 이름
   ceoName?: string; // 대표 이름
   companyAddress?: string; // 회사 주소
-
+  companyProfileCode?: number;
 }

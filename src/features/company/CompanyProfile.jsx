@@ -1,84 +1,169 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../pages/AuthContent';
+import axios from 'axios';
+
+const MAX_FILE_SIZE_MB = 10; // 최대 파일 크기 10MB
 
 const CompanyProfile = () => {
-
   const navigate = useNavigate();
-
-  const { companyName, companyAddress, ceoName, companyType } = useAuth();
+  const { token } = useAuth();
 
   const [companyInfo, setCompanyInfo] = useState({
-    name: companyName,
-    logo: "https://via.placeholder.com/150",
-    address : companyAddress,
-    ceo : ceoName,
-    companyType : companyType,
-    description: "혁신적인 기술 솔루션을 제공하는 기업입니다. 우리는 최신 기술을 활용하여 고객의 문제를 해결하고, 더 나은 미래를 만들어가고 있습니다.",
-    industry: "IT/소프트웨어",
-    website: "https://techstart.co.kr",
-    activeJobs: [
-      {
-        id: 1,
-        title: "시니어 프론트엔드 개발자",
-        department: "개발팀",
-        deadline: "2024-04-30",
-        status: "모집중"
-      },
-      {
-        id: 2,
-        title: "백엔드 개발자",
-        department: "개발팀",
-        deadline: "2024-05-15",
-        status: "모집중"
-      }
-    ]
+    name: "",
+    logo: "/default/logo.png", // 기본 로고 경로
+    address: "",
+    ceo: "",
+    companyType: "",
+    description: "",
+    industry: "",
+    website: "",
+    activeJobs: [],
   });
+
+  const [companyProfileCode, setCompanyProfileCode] = useState(null); // 추가: 회사 프로필 코드 상태
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+  const [error, setError] = useState(null); // 에러 상태
+
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      const localToken = localStorage.getItem("token");
+      console.log("Fetching company profile code...");
+      console.log("Token:", localToken);
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const profileCodeResponse = await axios.get("http://localhost:8080/companyprofile/current", {
+          headers: { Authorization: `Bearer ${localToken}` },
+        });
+        console.log("Profile code response:", profileCodeResponse);
+
+        const profileCode = profileCodeResponse.data;
+        setCompanyProfileCode(profileCode); // 회사 프로필 코드 저장
+
+        const response = await axios.get(`http://localhost:8080/companyprofile/read/${profileCode}`, {
+          headers: { Authorization: `Bearer ${localToken}` },
+        });
+        console.log("Company profile data:", response);
+
+        setCompanyInfo({
+          name: response.data.companyName || "회사 이름 없음",
+          logo: response.data.uploadFileName || "/default/logo.png",
+          address: response.data.companyAddress || "주소 없음",
+          ceo: response.data.ceoName || "대표 이름 없음",
+          companyType: response.data.companyType || "기업 유형 없음",
+          description: response.data.companyDescription || "기업 설명 없음",
+          industry: response.data.industry || "업종 정보 없음",
+          website: response.data.websiteUrl || "웹사이트 정보 없음",
+          activeJobs: response.data.activeJobs || [],
+        });
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+        setError("데이터를 가져오는 중 오류가 발생했습니다.");
+      } finally {
+        console.log("Finished fetching data. Setting isLoading to false.");
+        setIsLoading(false);
+      }
+    };
+
+    if (token || localStorage.getItem("token")) {
+      fetchCompanyData();
+    } else {
+      console.error("Token is missing.");
+    }
+  }, [token, navigate]);
+
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleLogoChange = async (event) => {
+    const token = localStorage.getItem("token");
+
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      alert(`파일 크기는 최대 ${MAX_FILE_SIZE_MB}MB까지 가능합니다.`);
+      return;
+    }
+
+    setIsUploading(true); // 업로드 상태 시작
+
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+      formData.append("companyProfileCode", companyProfileCode); // 회사 프로필 코드 전달
+
+      const response = await axios.post("http://localhost:8080/companyprofile/logo", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.status === 200) {
+        const data = response.data;
+        setCompanyInfo((prev) => ({
+          ...prev,
+          logo: data.logoUrl, // 반환된 로고 URL로 업데이트
+        }));
+        alert("로고가 성공적으로 변경되었습니다.");
+      }
+    } catch (error) {
+      console.error("로고 업로드 중 오류:", error);
+      alert("로고 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false); // 업로드 상태 종료
+    }
+  };
 
   return (
     <CompanyLayout>
-      <Container>
-        <ProfileSection>
-          <LogoSection>
-            <Logo src={companyInfo.logo} alt={companyInfo.name} />
-            <UploadButton>로고 변경</UploadButton>
-          </LogoSection>
+      {isLoading ? (
+        <div>로딩 중...</div>
+      ) : error ? (
+        <div>{error}</div>
+      ) : (
+        <Container>
+          <ProfileSection>
+            <LogoSection>
+              <Logo src={companyInfo.logo} alt={companyInfo.name || "로고"} />
+              <UploadLabel htmlFor="logo-upload">
+                {isUploading ? "업로드 중..." : "로고 변경"}
+              </UploadLabel>
+              <HiddenFileInput
+                id="logo-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleLogoChange}
+                disabled={isUploading} // 업로드 중에는 비활성화
+              />
+            </LogoSection>
 
-          <InfoSection>
-            <CompanyName>{companyInfo.name}</CompanyName>
-            <CompanyType>기업 규모 : {companyInfo.companyType}</CompanyType>
-            <CeoName>대표명 : {companyInfo.ceo}</CeoName>
-            <CompanyAddress>주소 : {companyInfo.address} </CompanyAddress>
-            <Industry>업종 : {companyInfo.industry}</Industry>
-            <Website href={companyInfo.website} target="_blank">
-              사이트 : {companyInfo.website}
-            </Website>
-            <Description>{companyInfo.description}</Description>
-            <EditButton onClick={() => navigate('/company/profile/edit')}>정보 수정</EditButton>
-          </InfoSection>
-        </ProfileSection>
-
-        <JobSection>
-          <SectionTitle>진행 중인 채용</SectionTitle>
-          <JobGrid>
-            {companyInfo.activeJobs.map(job => (
-              <JobCard key={job.id}>
-                <JobTitle>{job.title}</JobTitle>
-                <JobInfo>
-                  <Department>{job.department}</Department>
-                  <Deadline>마감일: {job.deadline}</Deadline>
-                </JobInfo>
-                <Status>{job.status}</Status>
-              </JobCard>
-            ))}
-          </JobGrid>
-        </JobSection>
-      </Container>
+            <InfoSection>
+              <CompanyName>{companyInfo.name || "회사 이름 없음"}</CompanyName>
+              <CompanyType>기업 규모 : {companyInfo.companyType || "정보 없음"}</CompanyType>
+              <CeoName>대표명 : {companyInfo.ceo || "정보 없음"}</CeoName>
+              <CompanyAddress>주소 : {companyInfo.address || "정보 없음"}</CompanyAddress>
+              <Industry>업종 : {companyInfo.industry || "정보 없음"}</Industry>
+              <Website href={companyInfo.website || "#"} target="_blank">
+                사이트 : {companyInfo.website || "정보 없음"}
+              </Website>
+              <Description>{companyInfo.description || "설명 없음"}</Description>
+              <EditButton onClick={() => navigate("/company/profile/edit")}>
+                정보 수정
+              </EditButton>
+            </InfoSection>
+          </ProfileSection>
+        </Container>
+      )}
     </CompanyLayout>
   );
 };
+
+
 
 const Container = styled.div`
   max-width: 1200px;
@@ -270,5 +355,27 @@ const Status = styled.div`
   border-radius: 9999px;
   font-size: 0.875rem;
 `;
+
+
+// 파일 업로드
+
+const HiddenFileInput = styled.input`
+  display: none;
+`;
+
+const UploadLabel = styled.label`
+  padding: 10px 15px;
+  background-color: #3498db;
+  color: #fff;
+  border-radius: 5px;
+  cursor: pointer;
+  text-align: center;
+
+  &:hover {
+    background-color: #2980b9;
+  }
+`;
+
+
 
 export default CompanyProfile;

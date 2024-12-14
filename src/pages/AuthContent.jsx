@@ -41,21 +41,11 @@ export const AuthProvider = ({ children }) => {
       companyAddress: userType === "company" ? companyAddress || null : null,
     });
 
-    console.log("AuthContext 초기화 완료:", {
-      name,
-      userType,
-      email,
-      userId,
-      userCode,
-      companyCode,
-      companyType,
-      companyName,
-      ceoName,
-      companyAddress,
-    });
   }, []);
 
   const login = (name, userType, email, userId, userCode, token, companyData = null) => {
+    console.log("로그인 호출:", { name, userType, email, userId, userCode, token, companyData });
+
     localStorage.setItem("name", name);
     localStorage.setItem("type", userType);
     localStorage.setItem("email", email);
@@ -69,6 +59,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     if (userType === "company" && companyData) {
+      console.log("회사 데이터 저장:", companyData);
       localStorage.setItem("companyCode", companyData.companyCode || "");
       localStorage.setItem("companyType", companyData.companyType || "");
       localStorage.setItem("companyName", companyData.companyName || "");

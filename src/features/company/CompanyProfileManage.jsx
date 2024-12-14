@@ -1,62 +1,108 @@
-import { useState } from 'react';
-import styled from 'styled-components';
-import CompanyLayout from './CompanyLayout';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../pages/AuthContent';
+import { useState, useEffect } from "react";
+import styled from "styled-components";
+import CompanyLayout from "./CompanyLayout";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const CompanyProfileManage = () => {
   const navigate = useNavigate();
-  const { companyName, companyAddress, ceoName, companyType } = useAuth();
 
+  // formData의 초기값을 DTO에 맞게 설정
   const [formData, setFormData] = useState({
-    name: companyName,
-    address: companyAddress,
-    ceo: ceoName,
-    type: companyType,
+    companyProfileCode: null, // 기업 프로필 코드
+    companyName: "", // 회사 이름
+    companyType: "", // 기업 형태
+    ceoName: "", // 대표 이름
+    companyAddress: "", // 회사 주소
+    companyDescription: "", // 회사 설명
+    industry: "", // 업종
+    websiteUrl: "", // 웹사이트
   });
 
   const [isEditMode, setIsEditMode] = useState(false); // 수정/저장 모드 상태
-  const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(true); // 로딩 상태
+  const [error, setError] = useState(null); // 에러 상태
 
+  // 초기 데이터 로드
+  useEffect(() => {
+    const fetchCompanyData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("로그인이 필요합니다.");
+        setIsLoading(true);
+
+        // 현재 회사 프로필 코드 가져오기
+        const profileCodeResponse = await axios.get(
+          "http://localhost:8080/companyprofile/current",
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        const companyProfileCode = profileCodeResponse.data;
+
+        // 회사 프로필 데이터 가져오기
+        const response = await axios.get(
+          `http://localhost:8080/companyprofile/read/${companyProfileCode}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        setFormData({
+          companyProfileCode, // 회사 프로필 코드 설정
+          companyName: response.data.companyName || "",
+          companyType: response.data.companyType || "",
+          ceoName: response.data.ceoName || "",
+          companyAddress: response.data.companyAddress || "",
+          companyDescription: response.data.companyDescription || "",
+          industry: response.data.industry || "",
+          websiteUrl: response.data.websiteUrl || "",
+        });
+      } catch (error) {
+        console.error("Error fetching company data:", error);
+        setError("데이터를 가져오는 중 오류가 발생했습니다.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, []);
+
+  // 입력 핸들러
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevFormData) => ({
-      ...prevFormData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 수정 버튼 핸들러
+  const handleEditClick = () => setIsEditMode(true);
+
+  // 저장 버튼 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('로그인이 필요합니다.');
-        navigate('/auth/sign-in');
-        return;
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("로그인이 필요합니다.");
+
+      console.log("수정 요청 데이터:", formData);
+
+      const response = await axios.put(
+        "http://localhost:8080/companyprofile/modify",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 204) {
+        alert("정보가 성공적으로 저장되었습니다.");
+        setIsEditMode(false);
       }
-
-      const response = await fetch('http://localhost:8080/api/v1/company/update', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`저장 중 오류가 발생했습니다: ${errorData.message}`);
-        return;
-      }
-
-      alert('정보가 성공적으로 저장되었습니다.');
-      setIsEditMode(false); // 저장 후 수정 모드 종료
     } catch (error) {
-      console.error('저장 중 오류 발생:', error);
-      alert('저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+      console.error("저장 중 오류 발생:", error);
+      alert("저장 중 오류가 발생했습니다.");
     }
   };
 
@@ -72,8 +118,8 @@ const CompanyProfileManage = () => {
               <Label>회사명</Label>
               <Input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="companyName"
+                value={formData.companyName}
                 onChange={handleInputChange}
                 readOnly={!isEditMode}
               />
@@ -83,8 +129,8 @@ const CompanyProfileManage = () => {
               <Label>기업형태</Label>
               <Input
                 type="text"
-                name="type"
-                value={formData.type}
+                name="companyType"
+                value={formData.companyType}
                 onChange={handleInputChange}
                 readOnly={!isEditMode}
               />
@@ -94,8 +140,8 @@ const CompanyProfileManage = () => {
               <Label>대표명</Label>
               <Input
                 type="text"
-                name="ceo"
-                value={formData.ceo}
+                name="ceoName"
+                value={formData.ceoName}
                 onChange={handleInputChange}
                 readOnly={!isEditMode}
               />
@@ -105,8 +151,40 @@ const CompanyProfileManage = () => {
               <Label>주소</Label>
               <Input
                 type="text"
-                name="address"
-                value={formData.address}
+                name="companyAddress"
+                value={formData.companyAddress}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>회사 설명</Label>
+              <TextArea
+                name="companyDescription"
+                value={formData.companyDescription}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>업종</Label>
+              <Input
+                type="text"
+                name="industry"
+                value={formData.industry}
+                onChange={handleInputChange}
+                readOnly={!isEditMode}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label>웹사이트</Label>
+              <Input
+                type="text"
+                name="websiteUrl"
+                value={formData.websiteUrl}
                 onChange={handleInputChange}
                 readOnly={!isEditMode}
               />
@@ -117,11 +195,11 @@ const CompanyProfileManage = () => {
             {isEditMode ? (
               <SaveButton type="submit">저장하기</SaveButton>
             ) : (
-              <EditButton type="button" onClick={() => setIsEditMode(true)}>
+              <EditButton type="button" onClick={handleEditClick}>
                 수정하기
               </EditButton>
             )}
-            <CancelButton type="button" onClick={() => navigate('/company/profile')}>
+            <CancelButton type="button" onClick={() => navigate("/company/profile")}>
               취소
             </CancelButton>
           </ButtonGroup>
@@ -130,6 +208,7 @@ const CompanyProfileManage = () => {
     </CompanyLayout>
   );
 };
+
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;

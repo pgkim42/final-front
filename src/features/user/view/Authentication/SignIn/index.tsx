@@ -41,6 +41,7 @@ export default function SignIn() {
         companyName,
         ceoName,
         companyAddress,
+        companyProfileCode,
       } = responseBody;
   
       const companyData = {
@@ -49,8 +50,11 @@ export default function SignIn() {
         companyName,
         ceoName,
         companyAddress,
+        companyProfileCode,
       };
-  
+      
+      console.log("로그인 전송 데이터:", { name, type, email, userId, userCode, token, companyData });
+
       login(name, type, email, userId, userCode, token, type === "company" ? companyData : null);
   
       // JWT 토큰 저장
