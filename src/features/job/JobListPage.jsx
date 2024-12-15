@@ -107,6 +107,11 @@ const JobListPage = () => {
           currentJobs.map(job => (
             <JobCard key={job.jobCode}>
               <Link to={`/jobs/${job.jobCode}`}>
+              {job.imageUrl && (
+                <Thumbnail>
+                  <img src={job.imageUrl} alt="공고 이미지" />
+                </Thumbnail>
+              )}
                 <JobInfo>
                   <JobTitle>{job.title}</JobTitle>
                   <Location>{job.address}</Location>
@@ -313,6 +318,19 @@ const ErrorWrapper = styled.div`
 const NoDataWrapper = styled.div`
   text-align: center;
   padding: 2rem;
+`;
+
+const Thumbnail = styled.div`
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 `;
 
 export default JobListPage;
