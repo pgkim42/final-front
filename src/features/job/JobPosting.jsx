@@ -153,10 +153,16 @@ const JobPosting = () => {
         throw new Error('인증 토큰이 없습니다.');
       }
 
-      // FormData로 변환
+      // FormData 객체 생성
       const formDataToSend = new FormData();
+
+      // JSON 데이터를 FormData로 변환
       Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value);
+        if (key === "image") {
+          formDataToSend.append("uploadFile", value);
+        } else {
+          formDataToSend.append(key, value);
+        }
       });
 
       await axios.post('http://localhost:8080/jobposting/register', formDataToSend, {
@@ -311,6 +317,17 @@ const JobPosting = () => {
               value={formData.skills}
               onChange={handleChange}
               placeholder="예) React, JavaScript, Node.js (쉼표로 구분)"
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="skills">근무지</Label>
+            <Input
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="실근무지를 기재해주세요"
             />
           </FormGroup>
 
