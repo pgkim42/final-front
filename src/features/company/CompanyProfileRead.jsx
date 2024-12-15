@@ -5,9 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../pages/AuthContent';
 import axios from 'axios';
 
-const MAX_FILE_SIZE_MB = 10; // 최대 파일 크기 10MB
 
-const CompanyProfile = () => {
+const CompanyProfileRead = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
 
@@ -52,7 +51,7 @@ const CompanyProfile = () => {
 
         setCompanyInfo({
           name: response.data.companyName || "회사 이름 없음",
-          logo: response.data.uploadFileName || "https://via.placeholder.com/150",
+          logo: response.data.uploadFileName || "/default/logo.png",
           address: response.data.companyAddress || "주소 없음",
           ceo: response.data.ceoName || "대표 이름 없음",
           companyType: response.data.companyType || "기업 유형 없음",
@@ -77,48 +76,6 @@ const CompanyProfile = () => {
     }
   }, [token, navigate]);
 
-  const [isUploading, setIsUploading] = useState(false);
-
-  const handleLogoChange = async (event) => {
-    const token = localStorage.getItem("token");
-
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-      alert(`파일 크기는 최대 ${MAX_FILE_SIZE_MB}MB까지 가능합니다.`);
-      return;
-    }
-
-    setIsUploading(true); // 업로드 상태 시작
-
-    try {
-      const formData = new FormData();
-      formData.append("logo", file);
-      formData.append("companyProfileCode", companyProfileCode); // 회사 프로필 코드 전달
-
-      const response = await axios.post("http://localhost:8080/companyprofile/logo", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 200) {
-        const data = response.data;
-        setCompanyInfo((prev) => ({
-          ...prev,
-          logo: data.logoUrl, // 반환된 로고 URL로 업데이트
-        }));
-        alert("로고가 성공적으로 변경되었습니다.");
-      }
-    } catch (error) {
-      console.error("로고 업로드 중 오류:", error);
-      alert("로고 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setIsUploading(false); // 업로드 상태 종료
-    }
-  };
-
   return (
     <CompanyLayout>
       {isLoading ? (
@@ -130,16 +87,6 @@ const CompanyProfile = () => {
           <ProfileSection>
             <LogoSection>
               <Logo src={companyInfo.logo} alt={companyInfo.name || "로고"} />
-              <UploadLabel htmlFor="logo-upload">
-                {isUploading ? "업로드 중..." : "로고 변경"}
-              </UploadLabel>
-              <HiddenFileInput
-                id="logo-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoChange}
-                disabled={isUploading} // 업로드 중에는 비활성화
-              />
             </LogoSection>
 
             <InfoSection>
@@ -152,9 +99,6 @@ const CompanyProfile = () => {
                 사이트 : {companyInfo.website || "정보 없음"}
               </Website>
               <Description>{companyInfo.description || "설명 없음"}</Description>
-              <EditButton onClick={() => navigate("/company/profile/edit")}>
-                정보 수정
-              </EditButton>
             </InfoSection>
           </ProfileSection>
         </Container>
@@ -208,18 +152,6 @@ const Logo = styled.img`
   }
 `;
 
-const UploadButton = styled.button`
-  padding: 0.5rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background: white;
-  color: #1a365d;
-  cursor: pointer;
-
-  &:hover {
-    background: #f8fafc;
-  }
-`;
 
 const InfoSection = styled.div`
   flex: 1;
@@ -275,107 +207,5 @@ const Description = styled.p`
   margin-bottom: 1.5rem;
 `;
 
-const EditButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: #3182ce;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
 
-  &:hover {
-    background: #2c5282;
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-`;
-
-const JobSection = styled.div`
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-`;
-
-const SectionTitle = styled.h2`
-  font-size: 1.5rem;
-  color: #1a365d;
-  margin-bottom: 1.5rem;
-`;
-
-const JobGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-`;
-
-const JobCard = styled.div`
-  padding: 2rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  background: white;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-`;
-
-const JobTitle = styled.h3`
-  font-size: 1.25rem;
-  color: #1a365d;
-  margin-bottom: 1rem;
-`;
-
-const JobInfo = styled.div`
-  margin-bottom: 1rem;
-`;
-
-const Department = styled.div`
-  color: #64748b;
-  margin-bottom: 0.5rem;
-`;
-
-const Deadline = styled.div`
-  color: #e53e3e;
-  font-size: 0.875rem;
-`;
-
-const Status = styled.div`
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: #e6fffa;
-  color: #047857;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-`;
-
-
-// 파일 업로드
-
-const HiddenFileInput = styled.input`
-  display: none;
-`;
-
-const UploadLabel = styled.label`
-  padding: 10px 15px;
-  background-color: #3498db;
-  color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-  text-align: center;
-
-  &:hover {
-    background-color: #2980b9;
-  }
-`;
-
-
-
-export default CompanyProfile;
+export default CompanyProfileRead;
