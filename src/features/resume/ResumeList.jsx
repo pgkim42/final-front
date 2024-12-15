@@ -76,11 +76,12 @@ const ResumeList = () => {
             <ResumeInfo>
               <ResumeTitle>{resume.introduce}</ResumeTitle>
               <MetaInfo>
-                <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
+                {/* <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate> */}
+                <UpdateDate>마지막 수정: {resume.updateDate}</UpdateDate>
               </MetaInfo>
             </ResumeInfo>
             <ButtonGroup>
-              <ActionButton as={Link} to={`/resumes/edit/${resume.resumeCode}`} className="edit">
+              <ActionButton as={Link} to={`/resumes/modify/${resume.resumeCode}`} className="edit">
                 수정
               </ActionButton>
               <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">

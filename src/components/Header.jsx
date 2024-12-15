@@ -134,9 +134,11 @@ const Header = () => {
               <SubMenuItem>
                 <StyledNavLink to="/jobs">채용공고 목록</StyledNavLink>
               </SubMenuItem>
+              {userType === "company" &&
               <SubMenuItem>
                 <StyledNavLink to="/jobs/post">채용등록</StyledNavLink>
               </SubMenuItem>
+              }
               <SubMenuItem>
                 <StyledNavLink to="/jobs/1">채용공고 상세조회 예시페이지</StyledNavLink>
               </SubMenuItem>
