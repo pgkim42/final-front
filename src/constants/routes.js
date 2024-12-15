@@ -11,7 +11,7 @@ export const ROUTES = {
   RESUME: {
     LIST: '/resumes/list',
     POST: '/resumes/post',
-    EDIT: '/resumes/:resumeCode/edit',
+    EDIT: '/resumes/modify/:resumeCode',
     READ: '/resumes/:resumeCode',
 
     READ_TEST: 'resumes/read',

@@ -35,8 +35,8 @@ const formatLocalDateTime = (localDateTime) => {
 const ResumeList = () => {
   // 초기값 설정
   const [resumes, setResumes] = useState([]);
-
   const token = localStorage.getItem('token');
+  const userCode = localStorage.getItem('userCode');
 
   // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
   useEffect(()=>{
@@ -45,7 +45,10 @@ const ResumeList = () => {
       const response = await axios.get(`http://localhost:8080/resume/list`, {
         headers: {
           Authorization: `Bearer ${token}`
-        }
+        },
+        params: { 
+          userCode 
+        },
       });
       if (response.status === 200) {
         setResumes(response.data);
@@ -55,7 +58,7 @@ const ResumeList = () => {
     
     }
     apicall();
-  }, []);
+  }, [token, userCode]);
 
   const handleDelete = (id) => {
     if (window.confirm('이력서를 삭제하시겠습니까?')) {
@@ -74,13 +77,14 @@ const ResumeList = () => {
         {resumes.map(resume => (
           <ResumeCard key={resume.resumeCode}>
             <ResumeInfo>
-              <ResumeTitle>{resume.introduce}</ResumeTitle>
+              <ResumeTitle>{resume.work}</ResumeTitle>
               <MetaInfo>
                 <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
+                {/* <UpdateDate>마지막 수정: {resume.updateDate}</UpdateDate> */}
               </MetaInfo>
             </ResumeInfo>
             <ButtonGroup>
-              <ActionButton as={Link} to={`/resumes/edit/${resume.resumeCode}`} className="edit">
+              <ActionButton as={Link} to={`/resumes/modify/${resume.resumeCode}`} className="edit">
                 수정
               </ActionButton>
               <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">

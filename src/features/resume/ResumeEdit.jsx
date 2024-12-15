@@ -1,59 +1,39 @@
 import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { getResume } from '../../mockApi';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from "axios";
+import "react-quill/dist/quill.snow.css";
 import {
   GlobalStyle,
   Container,
   Title,
   Form,
   FormGroup,
-  Label,
   Input,
   Button,
-  QuillWrapper
-} from '../../styles/ResumeStyles';
+  Label,
+  FullWidthWrapper,
+  DevSection,
+  AddButtonLarger,
+  DeleteButton,
+  DevWrapper,
+  QuillWrapper,
+} from "../../styles/ResumeStyles";
 
-
-const FileInput = styled(Input)`
-  padding: 10px;
-  &::file-selector-button {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    background-color: #3498db;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-
-    &:hover {
-      background-color: #2980b9;
-    }
-  }
-`;
-
-const AddButton = styled(Button)`
-  background-color: #3498db;
-  &:hover {
-    background-color: #2980b9;
-  }
-`;
-
-const RemoveButton = styled(Button)`
-  background-color: #e74c3c;
-  &:hover {
-    background-color: #c0392b;
-  }
-`;
-
-const ItemContainer = styled.div`
-  border: 1px solid #bdc3c7;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-`;
+const MODULES = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ['bold', 'italic', 'underline', 'strike'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['link'],
+    ['clean'],
+  ],
+  clipboard: {
+    matchVisual: false, // 기본 블록 태그를 <p>에서 <div>로 변경
+  },
+};
 
 const LoadingOverlay = styled.div`
   position: fixed;
@@ -73,116 +53,155 @@ const LoadingText = styled.p`
   font-size: 24px;
 `;
 
-const MODULES = {
-  toolbar: [
-    [{ header: [1, 2, 3, false] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    ['link'],
-    ['clean']
-  ]
-};
+const ResumeEdit = () => {
+  const { resumeCode } = useParams();
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
-const ResumeEdit = ({ resumeId, initialData, onSubmit }) => {
-  const [content, setContent] = useState('');
-  const [careers, setCareers] = useState([{ company: '', position: '', period: '', duties: '' }]);
-  const [educations, setEducations] = useState([{ school: '', major: '', degree: '', graduationYear: '' }]);
-  const [certifications, setCertifications] = useState([{ name: '', date: '', issuer: '' }]);
-  const [skills, setSkills] = useState('');
-  const [resumePdf, setResumePdf] = useState(null);
-  const [languageSkills, setLanguageSkills] = useState('');
+  const [board, setBoard] = useState({
+    introduce: '',
+    work: '',
+    link: '',
+    workExperience: '',
+    experienceDetail: [{ company: "", department: "", startDate: "", endDate: "", position: "", responsibility: "", salary: "" }],
+    education: [{ date: '', school: '', major: '' }],
+    certifications: [{ certificationName: '', issueDate: '', issuer: '' }],
+    languageSkills: [{ language: '', level: '' }],
+    skill: '',
+    jobCategory: '',
+    resumeFolder: null,
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (initialData) {
-      setContent(initialData.content);
-      setCareers(initialData.careers);
-      setEducations(initialData.educations);
-      setCertifications(initialData.certifications);
-      setSkills(initialData.skills);
-      setLanguageSkills(initialData.languageSkills);
-      setResumePdf(initialData.resumePdf);
-      setIsLoading(false);
-    } else {
-      const fetchResumeData = async () => {
-        try {
-          const data = await getResume(resumeId);
-          setContent(data.content);
-          setCareers(data.careers);
-          setEducations(data.educations);
-          setCertifications(data.certifications);
-          setSkills(data.skills);
-          setLanguageSkills(data.languageSkills);
-          setResumePdf(data.resumePdf);
-          setIsLoading(false);
-        } catch (error) {
-          console.error('이력서 데이터를 불러오는 중 오류가 발생했습니다:', error);
-          setIsLoading(false);
+    const apiCall = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8080/resume/read/${resumeCode}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 200) {
+          const data = response.data;
+
+          // 기본값 보장
+          setBoard((prev) => ({
+            ...data,
+            experienceDetail: data.experienceDetail || [], // undefined 방지
+            education: data.education || [], // 추가로 다른 항목도 확인
+            resumeFolder: data.uploadFileName || "", // 파일 경로로 매핑
+            resumeFolderName: data.uploadFileName?.split("/").pop() || "다운로드", // 파일 이름 추출
+          }));
+
+        } else {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
-      };
-
-      fetchResumeData();
-    }
-  }, [resumeId, initialData]);
-
-  const handleCareerChange = (index, field, value) => {
-    const newCareers = [...careers];
-    newCareers[index][field] = value;
-    setCareers(newCareers);
-  };
-
-  const handleEducationChange = (index, field, value) => {
-    const newEducations = [...educations];
-    newEducations[index][field] = value;
-    setEducations(newEducations);
-  };
-
-  const handleCertificationChange = (index, field, value) => {
-    const newCertifications = [...certifications];
-    newCertifications[index][field] = value;
-    setCertifications(newCertifications);
-  };
-
-  const addCareer = () => {
-    setCareers([...careers, { company: '', position: '', period: '', duties: '' }]);
-  };
-
-  const addEducation = () => {
-    setEducations([...educations, { school: '', major: '', degree: '', graduationYear: '' }]);
-  };
-
-  const addCertification = () => {
-    setCertifications([...certifications, { name: '', date: '', issuer: '' }]);
-  };
-
-  const removeCareer = (index) => {
-    const newCareers = careers.filter((_, i) => i !== index);
-    setCareers(newCareers);
-  };
-
-  const removeEducation = (index) => {
-    const newEducations = educations.filter((_, i) => i !== index);
-    setEducations(newEducations);
-  };
-
-  const removeCertification = (index) => {
-    const newCertifications = certifications.filter((_, i) => i !== index);
-    setCertifications(newCertifications);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const updatedData = {
-      content,
-      careers,
-      educations,
-      certifications,
-      skills,
-      languageSkills,
-      resumePdf: resumePdf ? resumePdf.name : null
+      } catch (error) {
+        console.error('Error fetching resume data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    onSubmit(updatedData);
+
+    apiCall();
+  }, [resumeCode, token]);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setBoard((prev) => ({
+        ...prev,
+        resumeFolder: file, // 새 파일로 덮어쓰기
+        resumeFolderName: file.name, // 파일 이름 업데이트
+      }));
+    }
+  };
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setBoard((prevBoard) => ({
+      ...prevBoard,
+      [name]: value,
+    }));
+  };
+
+  const handleArrayChange = (index, field, value, arrayName) => {
+    setBoard((prev) => ({
+      ...prev,
+      [arrayName]: prev[arrayName].map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const handleAdd = (newItem, arrayName) => {
+    setBoard((prev) => ({
+      ...prev,
+      [arrayName]: [...prev[arrayName], newItem],
+    }));
+  };
+
+  const handleDelete = (index, arrayName) => {
+    setBoard((prev) => ({
+      ...prev,
+      [arrayName]: prev[arrayName].filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    // 저장하기 전에 <p> 태그 제거
+    const sanitizedIntroduce = board.introduce.replace(/<p>|<\/p>/g, '');
+
+    const dto = {
+      resumeCode: parseInt(resumeCode, 10),
+      introduce: sanitizedIntroduce,
+      work: board.work,
+      link: board.link,
+      workExperience: parseInt(board.workExperience, 10),
+      experienceDetail: board.experienceDetail,
+      education: board.education,
+      certifications: board.certifications,
+      languageSkills: board.languageSkills,
+      skill: board.skill,
+      jobCategory: board.jobCategory,
+    };
+
+    const formData = new FormData();
+    formData.append("dtoJson", JSON.stringify(dto));
+    if (board.resumeFolder instanceof File) {
+      formData.append("uploadFile", board.resumeFolder); // 새 파일 전송
+    }
+    try {
+      const response = await axios.patch(
+        `http://localhost:8080/resume/modify`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        alert('이력서가 성공적으로 수정되었습니다.');
+        const updatedData = response.data;
+        setBoard((prev) => ({
+          ...prev,
+          ...updatedData
+        }));
+        navigate(`/resumes/${resumeCode}`);
+      } else {
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error updating resume:', error);
+      alert('이력서 수정에 실패했습니다. 다시 시도해주세요.');
+    }
   };
 
   if (isLoading) {
@@ -199,153 +218,352 @@ const ResumeEdit = ({ resumeId, initialData, onSubmit }) => {
       <Container>
         <Title>이력서 수정</Title>
         <Form onSubmit={handleSubmit}>
-          <FormGroup>
-            <Label htmlFor="content">상세 내용</Label>
+
+          {/* 담당 업무 */}
+          <FormGroup label="담당 업무">
+            <FullWidthWrapper>
+              <Input
+                type="text"
+                value={board.work || ""}
+                onChange={(e) =>
+                  setBoard((prev) => ({ ...prev, work: e.target.value }))
+                }
+                placeholder="담당 업무를 입력하세요."
+              />
+            </FullWidthWrapper>
+          </FormGroup>
+
+          {/* 상세 내용 */}
+          <FormGroup label="상세 내용">
             <QuillWrapper>
               <ReactQuill
                 theme="snow"
-                value={content}
-                onChange={setContent}
-                modules={MODULES}
-                placeholder="상세 내용을 입력해주세요"
+                value={board.introduce}
+                onChange={(value) => {
+                  setBoard((prev) => ({ ...prev, introduce: value }));
+                }}
+                placeholder="상세 내용을 입력하세요."
               />
             </QuillWrapper>
           </FormGroup>
 
-          <FormGroup>
-            <Label>경력</Label>
-            {careers.map((career, index) => (
-              <ItemContainer key={index}>
-                <Input
-                  placeholder="회사명"
-                  value={career.company}
-                  onChange={(e) => handleCareerChange(index, 'company', e.target.value)}
-                />
-                <Input
-                  placeholder="직위"
-                  value={career.position}
-                  onChange={(e) => handleCareerChange(index, 'position', e.target.value)}
-                />
-                <Input
-                  placeholder="근무 기간"
-                  value={career.period}
-                  onChange={(e) => handleCareerChange(index, 'period', e.target.value)}
-                />
-                <Input
-                  placeholder="주요 업무"
-                  value={career.duties}
-                  onChange={(e) => handleCareerChange(index, 'duties', e.target.value)}
-                />
-                <RemoveButton type="button" onClick={() => removeCareer(index)}>삭제</RemoveButton>
-              </ItemContainer>
+          {/* 세부 경력 */}
+          경력
+          <FormGroup label="세부 경력">
+            <DevSection>
+              <AddButtonLarger
+                type="button"
+                onClick={() =>
+                  handleAdd(
+                    {
+                      company: "",
+                      department: "",
+                      startDate: "",
+                      endDate: "",
+                      position: "",
+                      responsibility: "",
+                      salary: "",
+                    },
+                    "experienceDetail"
+                  )
+                }
+              >
+                + 경력 추가
+              </AddButtonLarger>
+            </DevSection>
+
+            {board.experienceDetail.map((detail, index) => (
+              <DevWrapper key={index}>
+                <div className="row">
+                  <Input
+                    type="text"
+                    value={detail.company || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "company", e.target.value, "experienceDetail")
+                    }
+                    placeholder="회사명"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.department || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "department", e.target.value, "experienceDetail")
+                    }
+                    placeholder="부서명"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.startDate || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "startDate", e.target.value, "experienceDetail")
+                    }
+                    placeholder="입사일"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.endDate || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "endDate", e.target.value, "experienceDetail")
+                    }
+                    placeholder="퇴사일"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.position || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "position", e.target.value, "experienceDetail")
+                    }
+                    placeholder="직급"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.responsibility || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "responsibility", e.target.value, "experienceDetail")
+                    }
+                    placeholder="담당 업무"
+                  />
+                  <Input
+                    type="text"
+                    value={detail.salary || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "salary", e.target.value, "experienceDetail")
+                    }
+                    placeholder="연봉"
+                  />
+                  <DeleteButton
+                    type="button"
+                    onClick={() => handleDelete(index, "experienceDetail")}
+                  >
+                    x
+                  </DeleteButton>
+                </div>
+              </DevWrapper>
             ))}
-            <AddButton type="button" onClick={addCareer}>경력 추가</AddButton>
           </FormGroup>
 
-          <FormGroup>
-            <Label>학력</Label>
-            {educations.map((education, index) => (
-              <ItemContainer key={index}>
-                <Input
-                  placeholder="학교명"
-                  value={education.school}
-                  onChange={(e) => handleEducationChange(index, 'school', e.target.value)}
-                />
-                <Input
-                  placeholder="전공"
-                  value={education.major}
-                  onChange={(e) => handleEducationChange(index, 'major', e.target.value)}
-                />
-                <Input
-                  placeholder="학위"
-                  value={education.degree}
-                  onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                />
-                <Input
-                  placeholder="졸업년도"
-                  value={education.graduationYear}
-                  onChange={(e) => handleEducationChange(index, 'graduationYear', e.target.value)}
-                />
-                <RemoveButton type="button" onClick={() => removeEducation(index)}>삭제</RemoveButton>
-              </ItemContainer>
+          {/* 자격증 */}
+          자격증
+          <FormGroup label="자격증">
+            {/* 자격증 추가 버튼 */}
+            <DevSection>
+              <AddButtonLarger
+                type="button"
+                onClick={() =>
+                  handleAdd(
+                    { certificationName: "", issueDate: "", issuer: "" },
+                    "certifications"
+                  )
+                }
+              >
+                + 자격증 추가
+              </AddButtonLarger>
+            </DevSection>
+
+            {/* 자격증 리스트 */}
+            {board.certifications.map((certification, index) => (
+              <DevWrapper key={index}>
+                <div className="row">
+                  <Input
+                    type="text"
+                    value={certification.certificationName || ""}
+                    onChange={(e) =>
+                      handleArrayChange(
+                        index,
+                        "certificationName",
+                        e.target.value,
+                        "certifications"
+                      )
+                    }
+                    placeholder="자격증명"
+                  />
+                  <Input
+                    type="text"
+                    value={certification.issueDate || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "issueDate", e.target.value, "certifications")
+                    }
+                    placeholder="발급일"
+                  />
+                  <Input
+                    type="text"
+                    value={certification.issuer || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "issuer", e.target.value, "certifications")
+                    }
+                    placeholder="발급기관"
+                  />
+                  <DeleteButton
+                    type="button"
+                    onClick={() => handleDelete(index, "certifications")}
+                  >
+                    x
+                  </DeleteButton>
+                </div>
+              </DevWrapper>
             ))}
-            <AddButton type="button" onClick={addEducation}>학력 추가</AddButton>
           </FormGroup>
 
-          <FormGroup>
-            <Label>자격증</Label>
-            {certifications.map((certification, index) => (
-              <ItemContainer key={index}>
-                <Input
-                  placeholder="자격증명"
-                  value={certification.name}
-                  onChange={(e) => handleCertificationChange(index, 'name', e.target.value)}
-                />
-                <Input
-                  placeholder="취득일"
-                  value={certification.date}
-                  onChange={(e) => handleCertificationChange(index, 'date', e.target.value)}
-                />
-                <Input
-                  placeholder="발급기관"
-                  value={certification.issuer}
-                  onChange={(e) => handleCertificationChange(index, 'issuer', e.target.value)}
-                />
-                <RemoveButton type="button" onClick={() => removeCertification(index)}>삭제</RemoveButton>
-              </ItemContainer>
+          {/* 언어 능력 */}
+          언어
+          <FormGroup label="언어 능력">
+            <DevSection>
+              <AddButtonLarger
+                type="button"
+                onClick={() =>
+                  handleAdd({ language: "", level: "" }, "languageSkills")
+                }
+              >
+                + 언어 능력 추가
+              </AddButtonLarger>
+            </DevSection>
+
+            {board.languageSkills.map((languageSkill, index) => (
+              <DevWrapper key={index}>
+                <div className="row">
+                  <Input
+                    type="text"
+                    value={languageSkill.language || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "language", e.target.value, "languageSkills")
+                    }
+                    placeholder="언어"
+                  />
+                  <Input
+                    type="text"
+                    value={languageSkill.level || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "level", e.target.value, "languageSkills")
+                    }
+                    placeholder="능력 수준 (예: 유창함, 비즈니스 회화, 일상 회화)"
+                  />
+                  <DeleteButton
+                    type="button"
+                    onClick={() => handleDelete(index, "languageSkills")}
+                  >
+                    x
+                  </DeleteButton>
+                </div>
+              </DevWrapper>
             ))}
-            <AddButton type="button" onClick={addCertification}>자격증 추가</AddButton>
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="skills">스킬</Label>
-            <Input
-              id="skills"
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              placeholder="보유 기술을 입력하세요"
-            />
+          {/* 학력 */}
+          학력
+          <FormGroup label="학력">
+            {board.education.map((edu, index) => (
+              <DevWrapper key={index}>
+                <div className="row">
+                  <Input
+                    type="text"
+                    value={edu.school || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "school", e.target.value, "education")
+                    }
+                    placeholder="학교명"
+                  />
+                  <Input
+                    type="text"
+                    value={edu.major || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "major", e.target.value, "education")
+                    }
+                    placeholder="전공"
+                  />
+                  <Input
+                    type="text"
+                    value={edu.date || ""}
+                    onChange={(e) =>
+                      handleArrayChange(index, "date", e.target.value, "education")
+                    }
+                    placeholder="날짜"
+                  />
+                </div>
+              </DevWrapper>
+            ))}
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="resumePdf">이력서 파일(PDF)</Label>
-            <FileInput
-              id="resumePdf"
-              type="file"
-              accept=".pdf"
-              onChange={(e) => setResumePdf(e.target.files[0])}
-            />
-            {resumePdf && <span>현재 파일: {resumePdf.name}</span>}
+          {/* 링크 */}
+          링크
+          <FormGroup label="링크">
+            <FullWidthWrapper>
+              <Input
+                type="text"
+                value={board.link || ""}
+                onChange={(e) =>
+                  setBoard((prev) => ({ ...prev, link: e.target.value }))
+                }
+                placeholder="깃허브 또는 포트폴리오 링크를 입력하세요."
+              />
+            </FullWidthWrapper>
           </FormGroup>
 
-          <FormGroup>
-            <Label htmlFor="languageSkills">언어능력</Label>
-            <Input
-              id="languageSkills"
-              value={languageSkills}
-              onChange={(e) => setLanguageSkills(e.target.value)}
-              placeholder="언어능력을 입력하세요"
-            />
+          {/* 경력 */}
+          경력
+          <FormGroup label="경력(년차)">
+            <FullWidthWrapper>
+              <Input
+                type="number"
+                value={board.workExperience || ""}
+                onChange={(e) =>
+                  setBoard((prev) => ({ ...prev, workExperience: e.target.value }))}
+                placeholder="경력(년차)을 입력하세요."
+              />
+            </FullWidthWrapper>
           </FormGroup>
 
-          <Button type="submit">이력서 수정하기</Button>
+          {/* 기술 스택 */}
+          스킬
+          <FormGroup label="기술 스택">
+            <FullWidthWrapper>
+              <Input
+                type="text"
+                value={board.skill || ""}
+                onChange={(e) =>
+                  setBoard((prev) => ({ ...prev, skill: e.target.value }))}
+                placeholder="사용 가능한 기술 스택을 입력하세요. (java, spring, react...)"
+              />
+            </FullWidthWrapper>
+          </FormGroup>
+
+          {/* 직무 setJobCategory */}
+          직무
+          <FormGroup label="직무">
+            <FullWidthWrapper>
+              <Input
+                type="text"
+                value={board.jobCategory || ""}
+                onChange={(e) =>
+                  setBoard((prev) => ({ ...prev, jobCategory: e.target.value }))}
+                placeholder="직무를 입력하세요 (백엔드 개발자...)"
+              />
+            </FullWidthWrapper>
+          </FormGroup>
+
+          <FormGroup label="이력서 파일">
+            <FullWidthWrapper>
+              {/* 이전 또는 수정된 파일 표시 */}
+              {board.resumeFolder && (
+                <p>
+                  현재 등록된 파일:{" "}
+                  <a href={board.resumeFolder} target="_blank" rel="noopener noreferrer">
+                    {board.resumeFolderName || "다운로드"}
+                  </a>
+                </p>
+              )}
+              <Input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+              />
+            </FullWidthWrapper>
+          </FormGroup>
+
+          <Button type="submit">수정하기</Button>
         </Form>
       </Container>
     </>
   );
-};
-ResumeEdit.propTypes = {
-  resumeId: PropTypes.string.isRequired,
-  initialData: PropTypes.shape({
-    content: PropTypes.string,
-    careers: PropTypes.array,
-    educations: PropTypes.array,
-    certifications: PropTypes.array,
-    skills: PropTypes.string,
-    languageSkills: PropTypes.string,
-    resumePdf: PropTypes.any
-  }),
-  onSubmit: PropTypes.func.isRequired
 };
 
 export default ResumeEdit;
