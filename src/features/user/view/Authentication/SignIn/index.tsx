@@ -44,6 +44,12 @@ export default function SignIn() {
         companyProfileCode,
       } = responseBody;
   
+      if (!token) {
+        console.error("응답에 토큰이 없습니다.", responseBody);
+        alert("로그인 중 문제가 발생했습니다. 다시 시도해주세요.");
+        return;
+      }
+
       const companyData = {
         companyCode,
         companyType,

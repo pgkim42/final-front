@@ -3,57 +3,55 @@ import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
 import Modal from 'react-modal';
-import axios from 'axios';
 
 Modal.setAppElement('#root'); // Modal 접근성을 위한 설정
 
-const UserMyPage = () => {
-  const [userInfo, setUserInfo] = useState({
-    name: '',
-    userType: '',
-    email: '',
-    userId: '',
-    companyCode: '',
-    companyType: '',
-    companyName: '',
-    ceoName: '',
-    companyAddress: '',
-  });
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [userInput, setUserInput] = useState('');
+const UserSocialMyPage = () => {
+  const {
+    name,
+    userType,
+    email,
+    userCode,
+    userId,
+    companyCode,
+    companyType,
+    companyName,
+    ceoName,
+    companyAddress,
+    cancelAccount,
+  } = useAuth(); // 변경된 AuthContext에서 각 필드를 가져옴
+
+  const navigate = useNavigate();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // 비밀번호 확인 모달 상태
+  const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false); // 소셜 회원탈퇴 모달 상태
+  const [isChecked, setIsChecked] = useState(false); // 체크박스 상태
+  const [userInput, setUserInput] = useState(""); // 사용자 입력
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUserData = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('로그인이 필요합니다.');
-        navigate('/auth/sign-in');
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8080/api/v1/auth/user-info', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.status === 200) {
-          setUserInfo(response.data);
-        } else {
-          throw new Error('사용자 데이터를 가져오는 데 실패했습니다.');
-        }
-      } catch (error) {
-        console.error('사용자 데이터 로드 오류:', error);
-        alert('사용자 정보를 불러오는 중 문제가 발생했습니다.');
-      }
-    };
-
-    fetchUserData();
-  }, [navigate]);
+    console.log('MyPage 상태 확인:', {
+      name,
+      userType,
+      email,
+      userId,
+      companyCode,
+      companyType,
+      companyName,
+      ceoName,
+      companyAddress,
+    });
+  }, [
+    name,
+    userType,
+    email,
+    userId,
+    companyCode,
+    companyType,
+    companyName,
+    ceoName,
+    companyAddress,
+  ]);
 
   const getUserTypeDisplay = (userType) => {
     switch (userType) {
@@ -71,60 +69,92 @@ const UserMyPage = () => {
 
   const handleOpenPasswordModal = () => setIsPasswordModalOpen(true);
   const handleClosePasswordModal = () => {
-    setPassword('');
-    setError('');
+    setPassword("");
+    setError("");
     setIsPasswordModalOpen(false);
   };
 
+  const handleOpenSocialRemoveModal = () => setIsSocialRemoveModalOpen(true);
+  const handleCloseSocialRemoveModal = () => {
+    setIsChecked(false);
+    setUserInput("");
+    setError("");
+    setIsSocialRemoveModalOpen(false);
+  };
+
   const handlePasswordSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
+    if (e) e.preventDefault();
 
     try {
-      const response = await axios.post(
-        'http://localhost:8080/api/v1/check-password',
-        { password },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const token = localStorage.getItem("token");
+      console.log("토큰값:", token);
 
-      if (response.data.result === 'success') {
-        alert('비밀번호 확인 완료');
-        navigate('/profile/edit');
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        navigate("/auth/sign-in");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8080/api/v1/check-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.result === "success") {
+        alert("비밀번호 확인 완료");
+        navigate("/profile/edit");
       } else {
-        setError(response.data.message || '비밀번호가 올바르지 않습니다.');
+        setError(data.message || "비밀번호가 올바르지 않습니다.");
       }
     } catch (error) {
-      console.error('비밀번호 확인 중 오류:', error);
-      setError('비밀번호가 올바르지 않습니다.');
+      console.error("비밀번호 확인 중 오류:", error);
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
   const handleRemoveSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token');
-
     try {
-      const endpoint =
-        userInfo.userType === 'kakao' ||
-        userInfo.userType === 'naver' ||
-        userInfo.userType === 'company' ||
-        userInfo.userType === 'dev';
-
-      const response = await axios.post(
-        endpoint,
-        { userId: userInfo.userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        alert('회원 탈퇴가 완료되었습니다.');
-        navigate('/');
-      } else {
-        setError(response.data.message || '회원 탈퇴에 실패했습니다.');
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        navigate("/auth/sign-in");
+        return;
       }
-    } catch (error) {
-      console.error('회원 탈퇴 중 오류 발생:', error);
-      setError('서버 오류가 발생했습니다. 다시 시도해주세요.');
+
+      const endpoint = userType === "kakao" || userType === "naver" || userType === "company" || userType === "dev"
+        "http://localhost:8080/api/v1/social-remove" // 소셜 회원 탈퇴
+
+      const requestBody = JSON.stringify({
+        userId,
+      });
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: requestBody,
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        cancelAccount();
+        alert("회원 탈퇴가 완료되었습니다.");
+        navigate("/");
+      } else {
+        setError(data.message || "회원 탈퇴에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("회원 탈퇴 중 오류 발생:", err);
+      setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
 
@@ -145,35 +175,33 @@ const UserMyPage = () => {
 
           <ProfileCard>
             <ProfileInfo>
-              <Name>이름: {userInfo.name}</Name>
-              <Type>회원유형: {getUserTypeDisplay(userInfo.userType)}</Type>
-              <Id>
-                아이디:{' '}
-                {['kakao', 'naver'].includes(userInfo.userType)
-                  ? userInfo.userCode
-                  : userInfo.userId}
-              </Id>
-              <Email>이메일: {userInfo.email}</Email>
+              <Name>이름: {name}</Name>
+              <Type>회원유형: {getUserTypeDisplay(userType)}</Type>
+              <Id>아이디: {userCode}</Id>
+              <Email>이메일: {email}</Email>
             </ProfileInfo>
           </ProfileCard>
 
-          {['dev', 'company'].includes(userInfo.userType) && (
+          {['dev', 'company'].includes(userType) && (
             <EditButton onClick={handleOpenPasswordModal}>회원 수정</EditButton>
           )}
-          {['kakao', 'naver'].includes(userInfo.userType) && (
+
+          {['kakao', 'naver'].includes(userType) && (
             <EditButton onClick={() => navigate('/profile/edit')}>회원 수정</EditButton>
           )}
+
+
         </Section>
 
-        {userInfo.userType === 'company' && (
+        {userType === "company" && (
           <Section>
             <SectionTitle>기업정보</SectionTitle>
             <ProfileCard>
               <ProfileInfo>
-                <CompanyInfo>회사명: {userInfo.companyName || '정보 없음'}</CompanyInfo>
-                <CompanyInfo>업종: {userInfo.companyType || '정보 없음'}</CompanyInfo>
-                <CompanyInfo>대표자명: {userInfo.ceoName || '정보 없음'}</CompanyInfo>
-                <CompanyInfo>주소: {userInfo.companyAddress || '정보 없음'}</CompanyInfo>
+                <CompanyInfo>회사명: {companyName || "정보 없음"}</CompanyInfo>
+                <CompanyInfo>업종: {companyType || "정보 없음"}</CompanyInfo>
+                <CompanyInfo>대표자명: {ceoName || "정보 없음"}</CompanyInfo>
+                <CompanyInfo>주소: {companyAddress || "정보 없음"}</CompanyInfo>
               </ProfileInfo>
             </ProfileCard>
           </Section>
@@ -200,7 +228,7 @@ const UserMyPage = () => {
           </ViewMoreButton>
         </Section>
 
-        {userInfo.userType !== "company" && (
+        {userType !== "company" && (
           <Section>
             <SectionTitle>이력서 관리</SectionTitle>
             <ResumeSection>
@@ -520,4 +548,4 @@ const CancelButton = styled.button`
   }
 `;
 
-export default UserMyPage;
+export default UserSocialMyPage;

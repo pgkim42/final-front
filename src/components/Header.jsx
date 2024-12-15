@@ -209,19 +209,15 @@ const Header = () => {
         <RightSection>
           {userType ? (
             <>
-              {userType === 'company' ? (
-                <>
-                  <span>{companyName} 님 안녕하세요</span>
-                  <Button onClick={() => navigate('/company')}>기업페이지</Button>
-                  <Button onClick={handleLogout}>로그아웃</Button>
-                </>
+              <span>{name} 님 안녕하세요</span>
+              {userType === "kakao" || userType === "naver" ? (
+                // 소셜 사용자용 마이페이지 버튼
+                <Button onClick={() => navigate('/socialprofile')}>마이페이지</Button>
               ) : (
-                <>
-                  <span>{name} 님 안녕하세요</span>
-                  <Button onClick={() => navigate('/profile')}>마이페이지</Button>
-                  <Button onClick={handleLogout}>로그아웃</Button>
-                </>
+                // 일반 사용자용 마이페이지 버튼
+                <Button onClick={() => navigate('/profile')}>마이페이지</Button>
               )}
+              <Button onClick={handleLogout}>로그아웃</Button>
             </>
           ) : (
             <>

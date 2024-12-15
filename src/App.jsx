@@ -48,6 +48,7 @@ import AdminMatching from './features/admin/AdminMatching';
 // API Test
 import TestResume from './TestResume';
 import JobPostEdit from './features/job/JobPostEdit';
+import UserSocialMyPage from './features/user/view/MyPage/UserSocialMyPage';
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
           <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyProfile />} />
           <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
           <Route path={ROUTES.PROFILE.MY_PAGE} element={<UserMyPage />} />
+          <Route path={ROUTES.PROFILE.SOCIAL_MY_PAGE} element={<UserSocialMyPage/>}/>
           <Route path={ROUTES.PROFILE.EDIT} element={<ProfileEdit />} />
 
           {/* <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyDetail />} /> */}
@@ -83,7 +85,7 @@ function App() {
           {/* 로그인/회원가입 관련 */}
           <Route path={ROUTES.USER.REGISTER} element={<SignUp />} />
           <Route path={ROUTES.USER.LOGIN} element={<SignIn />} />
-          <Route path={ROUTES.USER.SOCIALLOGIN} element={<OAuthCallback />} />
+          <Route path="/auth/oauth-response/:token/:userCode/:email/:name/:type/:expirationTime" element={<OAuthCallback />} />
 
 
           {/* 관리자 페이지 */}

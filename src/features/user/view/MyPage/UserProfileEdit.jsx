@@ -1,27 +1,29 @@
-import { useState } from 'react';
-import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../../pages/AuthContent';
-import Modal from 'react-modal';
+import { useState } from "react";
+import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../pages/AuthContent";
+import Modal from "react-modal";
 
-Modal.setAppElement('#root'); // Modal 접근성을 위한 설정
+Modal.setAppElement("#root"); // Modal 접근성을 위한 설정
 
 const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
 
 const UserProfileEdit = () => {
-  
-  const { userId, name, email, userType, companyName, companyType, ceoName, companyAddress, readOnly , cancelAccount} = useAuth();
+  const { userId, userCode, name, email, userType, readOnly, cancelAccount } = useAuth();
   const navigate = useNavigate();
+
+  // userType에 따라 resolvedUserId 결정
+  const resolvedUserId = userType === "kakao" || userType === "naver" ? userCode : userId;
 
   const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false); // 소셜 회원탈퇴 모달 상태
   const [errors, setErrors] = useState({});
   const [userInput, setUserInput] = useState(""); // 사용자 입력
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isChecked, setIsChecked] = useState(false); // 체크박스 상태
   const [serverError, setServerError] = useState("");
-  const [activeSection, setActiveSection] = useState('profile');
+  const [activeSection, setActiveSection] = useState("profile");
   const [loading, setLoading] = useState(false); // 로딩 상태 추가
-  
+
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -36,12 +38,12 @@ const UserProfileEdit = () => {
     setIsSocialRemoveModalOpen(false);
   };
 
-
-
-
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.currentPassword) newErrors.currentPassword = "현재 비밀번호를 입력해주세요.";
+    if (!formData.currentPassword) {
+      newErrors.currentPassword = "현재 비밀번호를 입력해주세요.";
+    }
+
     if (!formData.newPassword) {
       newErrors.newPassword = "새 비밀번호를 입력해주세요.";
     } else if (!passwordPattern.test(formData.newPassword)) {
@@ -49,8 +51,9 @@ const UserProfileEdit = () => {
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = "새 비밀번호가 일치하지 않습니다.";
+      newErrors.confirmPassword = "새 비밀번호가 서로 일치하지 않습니다.";
     }
+
     return newErrors;
   };
 
@@ -69,10 +72,10 @@ const UserProfileEdit = () => {
         }
 
         const response = await fetch("http://localhost:8080/api/v1/change-password", {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             currentPassword: formData.currentPassword,
@@ -90,13 +93,12 @@ const UserProfileEdit = () => {
           throw new Error(errorData.message || "비밀번호 변경 중 문제가 발생했습니다.");
         }
 
-        const result = await response.json();
         alert("비밀번호가 정상적으로 변경되었습니다. \n다시 로그인해주세요.");
         navigate("/auth/sign-in"); // 로그인 페이지로 이동
         cancelAccount();
       } catch (error) {
         console.error("비밀번호 변경 중 오류:", error.message);
-        alert('현재 비밀번호가 일치하지 않습니다.')
+        alert("현재 비밀번호가 일치하지 않습니다.");
       } finally {
         setLoading(false);
       }
@@ -114,7 +116,13 @@ const UserProfileEdit = () => {
         navigate("/auth/sign-in");
         return;
       }
-  
+
+      if (!resolvedUserId) {
+        alert("회원 정보를 가져오지 못했습니다. 다시 로그인해주세요.");
+        navigate("/auth/sign-in");
+        return;
+      }
+
       const response = await fetch("http://localhost:8080/api/v1/social-remove", {
         method: "POST",
         headers: {
@@ -122,10 +130,10 @@ const UserProfileEdit = () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          userId,
+          userCode: resolvedUserId, // 소셜 회원은 userCode로 탈퇴 처리
         }),
       });
-  
+
       const data = await response.json();
       if (response.ok && data.success) {
         cancelAccount();
@@ -139,22 +147,20 @@ const UserProfileEdit = () => {
       setError("서버 오류가 발생했습니다. 다시 시도해주세요.");
     }
   };
-  
-
-  
 
   return (
     <>
       <Title>회원정보 확인</Title>
       <Container>
-        <MainContent>
+      <MainContent>
           <Form onSubmit={handleSubmit}>
-            {activeSection === 'profile' && (
+            {/* 프로필 섹션 */}
+            {activeSection === "profile" && (
               <Section>
                 <SectionTitle>기본 정보</SectionTitle>
                 <FormGroup>
                   <Label>아이디</Label>
-                  <Input type="text" value={userId} readOnly={readOnly} />
+                  <Input type="text" value={resolvedUserId} readOnly={readOnly} />
                 </FormGroup>
                 <FormGroup>
                   <Label>이름</Label>
@@ -167,7 +173,8 @@ const UserProfileEdit = () => {
               </Section>
             )}
 
-            {activeSection === 'password' && (
+            {/* 비밀번호 변경 섹션 */}
+            {activeSection === "password" && (
               <Section>
                 <SectionTitle>비밀번호 변경</SectionTitle>
                 <FormGroup>
@@ -177,6 +184,7 @@ const UserProfileEdit = () => {
                     value={formData.currentPassword}
                     onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
                   />
+                  {errors.currentPassword && <ErrorMessage>{errors.currentPassword}</ErrorMessage>}
                 </FormGroup>
                 <FormGroup>
                   <Label>새 비밀번호</Label>
@@ -185,18 +193,23 @@ const UserProfileEdit = () => {
                     value={formData.newPassword}
                     onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                   />
+                  {errors.newPassword && <ErrorMessage>{errors.newPassword}</ErrorMessage>}
                 </FormGroup>
                 <FormGroup>
                   <Label>새 비밀번호 확인</Label>
                   <Input
                     type="password"
                     value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
                   />
+                  {errors.confirmPassword && <ErrorMessage>{errors.confirmPassword}</ErrorMessage>}
                 </FormGroup>
               </Section>
             )}
 
+            {activeSection === "password" && (
             <ButtonGroup>
               <SaveButton type="submit" disabled={loading}>
                 {loading ? "저장 중..." : "저장하기"}
@@ -205,6 +218,7 @@ const UserProfileEdit = () => {
                 취소
               </CancelButton>
             </ButtonGroup>
+            )}
           </Form>
         </MainContent>
 
@@ -216,14 +230,6 @@ const UserProfileEdit = () => {
             >
               기본 정보
             </NavItem>
-            {userType === 'company' && (
-              <NavItem
-                active={activeSection === 'companyprofile'}
-                onClick={() => setActiveSection('companyprofile')}
-              >
-                기업 정보
-              </NavItem>
-            )}
             {['dev', 'company'].includes(userType) && (
               <NavItem
                 active={activeSection === 'password'}
@@ -270,25 +276,25 @@ const UserProfileEdit = () => {
                   </Labels>
                 </CheckboxContainer>
                   <Labels>
-                    {userId}/탈퇴합니다 를 입력하세요
+                    {resolvedUserId}/탈퇴합니다 를 입력하세요
                   </Labels>
                 <InputContainer>
                   <PasswordInput
                     type="text"
                     value={userInput}
                     onChange={(e) => setUserInput(e.target.value)}
-                    placeholder={`${userId}/탈퇴합니다 를 입력하세요`} // 변경
+                    placeholder={`${resolvedUserId}/탈퇴합니다 를 입력하세요`} // 변경
                     required
                   />
                 </InputContainer>
-                {userInput && userInput !== `${userId}/탈퇴합니다` && (
+                {userInput && userInput !== `${resolvedUserId}/탈퇴합니다` && (
                   <ErrorMessage>입력하신 내용이 정확하지 않습니다.</ErrorMessage>
                 )}
                 {error && <ErrorMessage>{error}</ErrorMessage>}
                 <ButtonGroup>
                   <SubmitButton
                     type="submit"
-                    disabled={!isChecked || userInput !== `${userId}/탈퇴합니다`}
+                    disabled={!isChecked || userInput !== `${resolvedUserId}/탈퇴합니다`}
                   >
                     회원 탈퇴
                   </SubmitButton>
@@ -430,19 +436,17 @@ const Input = styled.input`
 `;
 
 const ErrorMessage = styled.span`
-  display: block;
-  color: #e74c3c;
+  color: red;
   font-size: 0.875rem;
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 3rem;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 20px;
 `;
-
 const Button = styled.button`
   padding: 1rem 2.5rem;
   border-radius: 8px;
@@ -464,13 +468,15 @@ const SaveButton = styled(Button)`
 `;
 
 const CancelButton = styled(Button)`
-  background: white;
-  color: #7f8c8d;
-  border: 2px solid #e9ecef;
-
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
   &:hover {
-    background: #f8f9fa;
-    border-color: #dee2e6;
+    background-color: #e2e6ea;
   }
 `;
 
@@ -486,24 +492,23 @@ const DeleteButton = styled(Button)`
 `;
 
 const ModalContent = styled.div`
-  text-align: center;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
 const CheckboxContainer = styled.div`
   display: flex;
-  flex-direction: row; /* 가로 배치 */
-  align-items: center; /* 수직 가운데 정렬 */
-  justify-content: space-between; /* 텍스트와 체크박스 사이 공간 분배 */
-  margin-bottom: 20px;
-  padding: 20px;
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  align-items: flex-start;
+  gap: 10px;
+  margin: 20px 0;
 `;
 
 const InputContainer = styled.div`
-  margin-bottom: 20px;
+  margin: 20px 0;
 `;
 
 const Checkbox = styled.input`
@@ -513,35 +518,35 @@ const Checkbox = styled.input`
 `;
 
 const PasswordInput = styled.input`
-  width: 95%;
+  width: 100%;
   padding: 10px;
-  margin: 10px 0;
   border: 1px solid #ccc;
   border-radius: 4px;
+  font-size: 14px;
+  &:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.2);
+  }
 `;
-
 const SubmitButton = styled.button`
-  background: #3498db;
+  padding: 10px 15px;
+  background-color: #007bff;
   color: white;
-  padding: 10px 20px;
   border: none;
   border-radius: 4px;
+  font-size: 14px;
   cursor: pointer;
-  opacity: ${props => props.disabled ? 0.6 : 1};
-  pointer-events: ${props => props.disabled ? 'none' : 'auto'};
-
-  &:hover {
-    background: #2980b9;
+  &:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
   }
 `;
 
 const Labels = styled.label`
-  display: block;
-  margin-bottom: 0.75rem;
-  color: #2c3e50;
-  font-weight: 600;
-  font-size: 1rem;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
 `;
-
 
 export default UserProfileEdit;
