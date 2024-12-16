@@ -21,6 +21,7 @@ import ApplicationManagement from './pages/ApplicationManagement'; // 오타 수
 import JobListPage from './features/job/JobListPage';
 import JobPosting from './features/job/JobPosting';
 import JobPostDetail from './features/job/JobPostDetail';
+import JobResumeSubmit from './features/job/JobResumeSubmit';
 
 // Resume Features
 import ResumePosting from './features/resume/ResumePosting';
@@ -65,6 +66,7 @@ function App() {
           <Route path={ROUTES.JOB.POST} element={<JobPosting />} />
           <Route path={ROUTES.JOB.DETAIL} element={<JobPostDetail />} />
           <Route path={ROUTES.JOB.EDIT} element={<JobPostEdit />} />
+          <Route path={ROUTES.JOB.APPLY} element={<JobResumeSubmit />} />
 
           {/* 이력서 관련 */}
           <Route path={ROUTES.RESUME.LIST} element={<ResumeList />} />
@@ -78,7 +80,7 @@ function App() {
           <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyProfile />} />
           <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
           <Route path={ROUTES.PROFILE.MY_PAGE} element={<UserMyPage />} />
-          <Route path={ROUTES.PROFILE.SOCIAL_MY_PAGE} element={<UserSocialMyPage/>}/>
+          <Route path={ROUTES.PROFILE.SOCIAL_MY_PAGE} element={<UserSocialMyPage />} />
           <Route path={ROUTES.PROFILE.EDIT} element={<ProfileEdit />} />
 
           {/* <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyDetail />} /> */}

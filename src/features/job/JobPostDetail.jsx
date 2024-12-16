@@ -73,19 +73,7 @@ const JobPostDetail = () => {
         alert('로그인이 필요합니다.');
         return navigate('/login');
       }
-
-      const response = await axios.post(
-        `http://localhost:8080/apply/applyto/${code}`,
-        {}, // POST 요청의 경우 본문이 없으면 빈 객체 전달
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      const result = response.data;
-      console.log('API 응답값: ', result);
-
-      alert('지원이 성공적으로 완료되었습니다!');
+      navigate(`/jobs/${code}/apply`);
     } catch (err) {
       console.log('Error applying for job:', err);
       alert('지원에 실패하였습니다.');
