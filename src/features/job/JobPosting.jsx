@@ -124,13 +124,11 @@ const JobPosting = () => {
     tag: '',
     jobCategory: 'IT/개발',
     postingDeadline: '',
-    companyProfileCode: 2,
+    companyProfileCode: null, // 초기값 null
     skill: '',
     address: '',
   });
 
-  // const [coordinates, setCoordinates] = useState({ lat: '', lng: ''}); // 좌표 상태 추가
-  // const [address, setAddress] = useState(''); // 주소 상태 추가
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -141,7 +139,26 @@ const JobPosting = () => {
     const storedToken = localStorage.getItem('token');
     if (!storedToken) {
       navigate('/login');
+      return;
     }
+    axios
+      .get('http://localhost:8080/api/v1/company-profile-code', {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
+      })
+      .then((response) => {
+        setFormData((prev) => ({
+          ...prev,
+          companyProfileCode: response.data, // API로부터 companyProfileCode 설정
+        }));
+        console.log("responseDATA!!!!!!!!!!!!!!!!!! : " + response.data);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch companyProfileCode:', err);
+        setError('기업 프로필 정보를 가져오는 데 실패했습니다.');
+      });
+
   }, [navigate]);
 
   const handleSubmit = async (e) => {
