@@ -56,7 +56,7 @@ const JobPostDetail = () => {
         }
       );
       const companyProfileCode = response.data;
-  
+
       // companyProfileCode를 포함하여 올바른 경로로 이동
       console.log("Navigating to:", `/company/read/${companyProfileCode}`);
       navigate(`/company/read/${companyProfileCode}`);
@@ -64,8 +64,33 @@ const JobPostDetail = () => {
       console.error("Error fetching company profile code:", error);
     }
   };
-  
-  
+
+  // 지원하기 버튼 핸들러
+  const handleApply = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('로그인이 필요합니다.');
+        return navigate('/login');
+      }
+
+      const response = await axios.post(
+        `http://localhost:8080/apply/applyto/${code}`,
+        {}, // POST 요청의 경우 본문이 없으면 빈 객체 전달
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      const result = response.data;
+      console.log('API 응답값: ', result);
+
+      alert('지원이 성공적으로 완료되었습니다!');
+    } catch (err) {
+      console.log('Error applying for job:', err);
+      alert('지원에 실패하였습니다.');
+    }
+  };
 
   useEffect(() => {
     const fetchJobDetail = async () => {
@@ -89,7 +114,7 @@ const JobPostDetail = () => {
         console.error("Error fetching job details:", err);
       }
     };
-  
+
     fetchJobDetail();
   }, [code]);
 
@@ -154,7 +179,7 @@ const JobPostDetail = () => {
     <Container>
       <MainContent>
         <DetailSection>
-        <h1 onClick={handleTitleClick}>{job.title}</h1>
+          <h1 onClick={handleTitleClick}>{job.title}</h1>
           <Header>
             {isAuthor && (
               <ButtonGroup>
@@ -226,7 +251,11 @@ const JobPostDetail = () => {
               <SectionTitle>마감일</SectionTitle>
               <SectionContent>{format(new Date(job.postingDeadline), 'yyyy년 MM월 dd일')}</SectionContent>
             </Section>
+            <ApplySection>
+              <ApplyButton onClick={handleApply}>지원하기</ApplyButton>
+            </ApplySection>
           </Content>
+
         </DetailSection>
 
         <RecentJobsSection>
@@ -459,6 +488,28 @@ const MapWrapper = styled.div`
   border: 1px solid #ddd;
 `;
 
+const ApplyButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+
+  &:hover {
+    background-color: #218838;
+  }
+`;
+
+const ApplySection = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+`;
+
 const KakaoMap = ({ lat, lng }) => {
   const mapContainerRef = useRef(null);
 
@@ -489,5 +540,7 @@ const KakaoMap = ({ lat, lng }) => {
     />
   );
 };
+
+
 
 export default JobPostDetail;
