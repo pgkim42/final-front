@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import JobListBar from './JobListBar';
 import { useRef } from 'react';
+import { useAuth } from '../../pages/AuthContent';
 
 const { kakao } = window; // 카카오맵 SDK
 
@@ -31,6 +32,8 @@ const JobPostDetail = () => {
 
     checkAuthor();
   }, [job]);
+
+  const { userType } = useAuth();
 
   const handleDelete = async () => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
@@ -190,12 +193,12 @@ const JobPostDetail = () => {
     <Container>
       <MainContent>
         <DetailSection>
-          <h1 onClick={handleTitleClick}>{job.title}</h1>
+          <h1>{job.title}</h1>
           <Header>
             <SubInfo>
-              <InfoItem>
+              <CompanyName onClick={handleTitleClick}>
                 {job.companyName}
-              </InfoItem>
+              </CompanyName>
               <InfoItem>
                 <Icon viewBox="0 0 24 24">
                   <path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" />
@@ -250,9 +253,11 @@ const JobPostDetail = () => {
               <SectionContent>{format(new Date(job.postingDeadline), 'yyyy년 MM월 dd일')}</SectionContent>
             </Section>
 
-            <ApplySection>
-              <ApplyButton onClick={handleApply}>지원하기</ApplyButton>
-            </ApplySection>
+            {(userType === "kakao" || userType === "naver" || userType === "dev")  &&(
+              <ApplySection>
+                <ApplyButton onClick={handleApply}>지원하기</ApplyButton>
+              </ApplySection>
+            )}
 
 
             {isAuthor && (
@@ -344,6 +349,13 @@ const SubInfo = styled.div`
   display: flex;
   gap: 1.5rem;
   color: #666;
+`;
+
+const CompanyName = styled.span`
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  cursor: pointer;
 `;
 
 const InfoItem = styled.span`
