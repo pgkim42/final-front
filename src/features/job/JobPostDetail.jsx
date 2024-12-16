@@ -5,6 +5,9 @@ import styled from 'styled-components';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import JobListBar from './JobListBar';
+import { useRef } from 'react';
+
+const { kakao } = window; // 카카오맵 SDK
 
 const JobPostDetail = () => {
   const { code } = useParams();
@@ -14,6 +17,9 @@ const JobPostDetail = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isAuthor, setIsAuthor] = useState(false);
+  const [coordinates, setCoordinates] = useState(null); // 위도, 경도 상태 관리
+
+  const mapContainerRef = useRef(null); // 지도 컨테이너 Ref  
 
   useEffect(() => {
     const checkAuthor = () => {
@@ -47,6 +53,19 @@ const JobPostDetail = () => {
         setError(null);
         const response = await axios.get(`http://localhost:8080/jobposting/read?no=${code}`);
         setJob(response.data);
+
+        // 좌표 가져오기
+        if (response.data.address) {
+          const coordResponse = await axios.get(`http://localhost:8080/kakao-map/coordinates/${response.data.jobCode}`);
+          const coordData = coordResponse.data;
+
+          if (coordData.documents.length > 0) {
+            setCoordinates({
+              lat: parseFloat(coordData.documents[0].y),
+              lng: parseFloat(coordData.documents[0].x),
+            });
+          }
+        }
       } catch (err) {
         setError(err.message || '상세 정보를 불러오는데 실패했습니다.');
         console.error('Error fetching job details:', err);
@@ -74,6 +93,42 @@ const JobPostDetail = () => {
 
     fetchRecentJobs();
   }, [code]);
+
+  // 좌표 호출 및 지도 표시
+  useEffect(() => {
+    const fetchCoordinates = async () => {
+      if (!job || !job.jobCode) return;
+
+      try {
+        const response = await axios.get(`http://localhost:8080/kakao-map/coordinates/${job.jobCode}`);
+        console.log('Coordinates response:', response.data); // 로그 확인
+
+        if (response.data.documents.length > 0) {
+          const { x: lng, y: lat } = response.data.documents[0];
+          setCoordinates({ lat: parseFloat(lat), lng: parseFloat(lng) });
+
+          if (mapContainerRef.current) {
+            const map = new kakao.maps.Map(mapContainerRef.current, {
+              center: new kakao.maps.LatLng(lat, lng),
+              level: 3,
+            });
+
+            const marker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(lat, lng),
+            });
+
+            marker.setMap(map);
+          }
+        } else {
+          console.error('No coordinates found in response.');
+        }
+      } catch (err) {
+        console.error('Error fetching coordinates:', err);
+      }
+    };
+
+    fetchCoordinates();
+  }, [job]);
 
   if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
   if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
@@ -139,6 +194,17 @@ const JobPostDetail = () => {
                 ))}
               </SkillTags>
             </Section>
+
+            <Content>
+              {/* 근무지 섹션 */}
+              <Section>
+                <SectionTitle>근무지</SectionTitle>
+                <SectionContent>
+                  <p>{job?.address || '주소 정보 없음'}</p>
+                  {coordinates && <KakaoMap lat={coordinates.lat} lng={coordinates.lng} />}
+                </SectionContent>
+              </Section>
+            </Content>
 
             <Section>
               <SectionTitle>마감일</SectionTitle>
@@ -369,5 +435,43 @@ const DeleteButton = styled(Button)`
     background-color: #c0392b;
   }
 `;
+
+const MapWrapper = styled.div`
+  width: 100%;
+  height: 300px;
+  margin-top: 1rem;
+  border: 1px solid #ddd;
+`;
+
+const KakaoMap = ({ lat, lng }) => {
+  const mapContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (!window.kakao || !lat || !lng) return;
+
+    const map = new window.kakao.maps.Map(mapContainerRef.current, {
+      center: new window.kakao.maps.LatLng(lat, lng), // 중심 좌표
+      level: 3, // 확대 레벨
+    });
+
+    const marker = new window.kakao.maps.Marker({
+      position: new window.kakao.maps.LatLng(lat, lng),
+    });
+
+    marker.setMap(map);
+  }, [lat, lng]);
+
+  return (
+    <div
+      ref={mapContainerRef}
+      style={{
+        width: "100%",
+        height: "300px",
+        border: "1px solid #ddd",
+        marginTop: "1rem",
+      }}
+    />
+  );
+};
 
 export default JobPostDetail;

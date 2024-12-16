@@ -31,8 +31,16 @@ const JobListPage = () => {
       // 또는 jobCode 기준으로 정렬하려면:
       // const reversedData = [...response.data].sort((a, b) => b.jobCode - a.jobCode);
 
-      setJobs(reversedData);
-      setFilteredJobs(reversedData);
+      const jobsWithImage = reversedData.map(job => ({
+        ...job,
+        imageUrl: job.imgPath,
+      }));
+
+      // setJobs(reversedData);
+      // setFilteredJobs(reversedData);
+      setJobs(jobsWithImage);
+      setFilteredJobs(jobsWithImage);
+      
     } catch (err) {
       setError(err.message || '채용공고를 불러오는데 실패했습니다.');
       console.error('Error fetching jobs:', err);
