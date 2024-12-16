@@ -117,14 +117,14 @@ const JobPosting = () => {
     title: '',
     content: '',
     recruitJob: '',
-    recruitField: 3,
+    recruitField: '',
     salary: '',
     postingStatus: true,
     workExperience: '',
     tag: '',
     jobCategory: 'IT/개발',
     postingDeadline: '',
-    companyProfileCode: 5,
+    companyProfileCode: 2,
     skill: '',
     address: '',
   });
@@ -230,10 +230,10 @@ const JobPosting = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="recuritField">모집인원 *</Label>
+            <Label htmlFor="recruitField">모집인원 *</Label>
             <Input
-              id="recuritField"
-              name="recuritField"
+              id="recruitField"
+              name="recruitField"
               type="number"
               value={formData.recruitField}
               onChange={handleChange}
