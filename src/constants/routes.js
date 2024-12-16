@@ -6,6 +6,7 @@ export const ROUTES = {
     POST: '/jobs/post',
     DETAIL: '/jobs/:code',
     EDIT: 'jobs/edit/:code',
+    APPLY: '/jobs/:code/apply',
   },
 
   RESUME: {
