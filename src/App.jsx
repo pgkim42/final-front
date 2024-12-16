@@ -49,6 +49,7 @@ import AdminMatching from './features/admin/AdminMatching';
 import TestResume from './TestResume';
 import JobPostEdit from './features/job/JobPostEdit';
 import UserSocialMyPage from './features/user/view/MyPage/UserSocialMyPage';
+import CompanyOverview from './features/company/CompanyOverview';
 
 function App() {
   return (
@@ -103,6 +104,7 @@ function App() {
           <Route path={ROUTES.COMPANY.PROFILE} element={<CompanyProfile />} />
           <Route path="/company/jobs/:jobId/applicants" element={<CompanyApplicantList />} />
           <Route path={ROUTES.COMPANY.PROFILE_EDIT} element={<CompanyProfileManage />} />
+          <Route path="/company/read/:companyProfileCode" element={<CompanyOverview />} />
 
           {/* API 테스트용 */}
           <Route path="/TestResume" element={<TestResume />} />

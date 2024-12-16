@@ -304,11 +304,11 @@ const JobPosting = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="skills">보유스킬</Label>
+            <Label htmlFor="skill">보유스킬</Label>
             <Input
-              id="skills"
-              name="skills"
-              value={formData.skills}
+              id="skill"
+              name="skill"
+              value={formData.skill}
               onChange={handleChange}
               placeholder="예) React, JavaScript, Node.js (쉼표로 구분)"
             />
