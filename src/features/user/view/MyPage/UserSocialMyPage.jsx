@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
 import Modal from 'react-modal';
+import axios from 'axios';
 
 Modal.setAppElement('#root'); // Modal 접근성을 위한 설정
 
@@ -158,12 +159,38 @@ const UserSocialMyPage = () => {
     }
   };
 
-  const stats = {
+  const [stats, setStats] = useState({
     totalApplications: 12,
     ongoingApplications: 5,
     savedJobs: 8,
-    resumes: 2,
-  };
+    resumes: 0, // 초기값 설정
+  });
+
+  useEffect(() => {
+    const userCode = localStorage.getItem("userCode");
+    const token = localStorage.getItem("token"); // JWT 토큰 가져오기
+  
+    if (userCode && token) {
+      axios
+        .get(`http://localhost:8080/resume/count`, {
+          params: { userCode },
+          headers: {
+            Authorization: `Bearer ${token}`, // Authorization 헤더 추가
+          },
+        })
+        .then((response) => {
+          setStats((prevStats) => ({
+            ...prevStats,
+            resumes: response.data, // API 응답으로 이력서 개수 업데이트
+          }));
+        })
+        .catch((error) => {
+          console.error("Error fetching resume count:", error);
+        });
+    } else {
+      console.error("Missing userCode or token in localStorage");
+    }
+  }, []);
 
   return (
     <Container>
@@ -234,7 +261,7 @@ const UserSocialMyPage = () => {
             <ResumeSection>
               <ResumeCount>총 {stats.resumes}개의 이력서</ResumeCount>
               <ResumeButton as={Link} to="/resumes/post">새 이력서 등록</ResumeButton>
-              <ResumeButton as={Link} to="/resumes">이력서 관리</ResumeButton>
+              <ResumeButton as={Link} to="/resumes/list">이력서 관리</ResumeButton>
             </ResumeSection>
           </Section>
         )}

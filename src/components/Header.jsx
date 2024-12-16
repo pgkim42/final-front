@@ -195,14 +195,18 @@ const Header = () => {
             </SubMenu>
           </NavItem>
 
-          <NavItem>
-            기업용 페이지
-            <SubMenu>
-              <SubMenuItem>
-                <StyledNavLink to="/company">기업 대시보드</StyledNavLink>
-              </SubMenuItem>
-            </SubMenu>
-          </NavItem>
+          {userType === "company" &&(
+            <>
+              <NavItem>
+                기업용 페이지
+                <SubMenu>
+                  <SubMenuItem>
+                    <StyledNavLink to="/company">기업 대시보드</StyledNavLink>
+                  </SubMenuItem>
+                </SubMenu>
+              </NavItem>
+            </>
+          )}
 
         </NavList>
 
