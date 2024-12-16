@@ -124,11 +124,13 @@ const JobPosting = () => {
     tag: '',
     jobCategory: 'IT/개발',
     postingDeadline: '',
-    companyProfileCode: 6,
+    companyProfileCode: 5,
     skill: '',
     address: '',
   });
 
+  // const [coordinates, setCoordinates] = useState({ lat: '', lng: ''}); // 좌표 상태 추가
+  // const [address, setAddress] = useState(''); // 주소 상태 추가
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -310,11 +312,11 @@ const JobPosting = () => {
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="skills">보유스킬</Label>
+            <Label htmlFor="skill">보유스킬</Label>
             <Input
-              id="skills"
-              name="skills"
-              value={formData.skills}
+              id="skill"
+              name="skill"
+              value={formData.skill}
               onChange={handleChange}
               placeholder="예) React, JavaScript, Node.js (쉼표로 구분)"
             />
