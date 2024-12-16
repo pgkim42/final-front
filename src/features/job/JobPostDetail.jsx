@@ -46,11 +46,30 @@ const JobPostDetail = () => {
     }
   };
 
+  const handleTitleClick = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `http://localhost:8080/jobposting/${code}/company-profile-code`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      const companyProfileCode = response.data;
+  
+      // companyProfileCode를 포함하여 올바른 경로로 이동
+      console.log("Navigating to:", `/company/read/${companyProfileCode}`);
+      navigate(`/company/read/${companyProfileCode}`);
+    } catch (error) {
+      console.error("Error fetching company profile code:", error);
+    }
+  };
+  
+  
+
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
-        setLoading(true);
-        setError(null);
         const response = await axios.get(`http://localhost:8080/jobposting/read?no=${code}`);
         setJob(response.data);
 
@@ -67,13 +86,10 @@ const JobPostDetail = () => {
           }
         }
       } catch (err) {
-        setError(err.message || '상세 정보를 불러오는데 실패했습니다.');
-        console.error('Error fetching job details:', err);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching job details:", err);
       }
     };
-
+  
     fetchJobDetail();
   }, [code]);
 
@@ -138,8 +154,8 @@ const JobPostDetail = () => {
     <Container>
       <MainContent>
         <DetailSection>
+        <h1 onClick={handleTitleClick}>{job.title}</h1>
           <Header>
-            <Title>{job.title}</Title>
             {isAuthor && (
               <ButtonGroup>
                 <EditButton onClick={() => navigate(`/jobs/edit/${code}`)}>
