@@ -97,6 +97,7 @@ const JobPostDetail = () => {
       try {
         const response = await axios.get(`http://localhost:8080/jobposting/read?no=${code}`);
         setJob(response.data);
+        console.log(response.data);
 
         // 좌표 가져오기
         if (response.data.address) {
@@ -109,6 +110,16 @@ const JobPostDetail = () => {
               lng: parseFloat(coordData.documents[0].x),
             });
           }
+        }
+
+        // 회사이름 가져오기
+        const companyProfileCode = response.data.companyProfileCode;
+        if (companyProfileCode) {
+          const companyResponse = await axios.get(`http://localhost:8080/companyprofile/read/${companyProfileCode}`);
+          setJob(prevJob => ({
+            ...prevJob,
+            companyName: companyResponse.data.companyName,
+          }));
         }
       } catch (err) {
         console.error("Error fetching job details:", err);
@@ -181,22 +192,9 @@ const JobPostDetail = () => {
         <DetailSection>
           <h1 onClick={handleTitleClick}>{job.title}</h1>
           <Header>
-            {isAuthor && (
-              <ButtonGroup>
-                <EditButton onClick={() => navigate(`/jobs/edit/${code}`)}>
-                  수정
-                </EditButton>
-                <DeleteButton onClick={handleDelete}>
-                  삭제
-                </DeleteButton>
-              </ButtonGroup>
-            )}
             <SubInfo>
               <InfoItem>
-                <Icon viewBox="0 0 24 24">
-                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
-                </Icon>
-                {job.address}
+                {job.companyName}
               </InfoItem>
               <InfoItem>
                 <Icon viewBox="0 0 24 24">
@@ -251,9 +249,23 @@ const JobPostDetail = () => {
               <SectionTitle>마감일</SectionTitle>
               <SectionContent>{format(new Date(job.postingDeadline), 'yyyy년 MM월 dd일')}</SectionContent>
             </Section>
+
             <ApplySection>
               <ApplyButton onClick={handleApply}>지원하기</ApplyButton>
             </ApplySection>
+
+
+            {isAuthor && (
+              <ButtonGroup>
+                <EditButton onClick={() => navigate(`/jobs/edit/${code}`)}>
+                  수정
+                </EditButton>
+                <DeleteButton onClick={handleDelete}>
+                  삭제
+                </DeleteButton>
+              </ButtonGroup>
+            )}
+
           </Content>
 
         </DetailSection>

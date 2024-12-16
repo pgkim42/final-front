@@ -124,7 +124,7 @@ const JobPosting = () => {
     tag: '',
     jobCategory: 'IT/개발',
     postingDeadline: '',
-    companyProfileCode: 5,
+    companyProfileCode: 2,
     skill: '',
     address: '',
   });
