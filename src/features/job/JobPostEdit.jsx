@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import styled from 'styled-components';
+import styled, { createGlobalStyle } from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
@@ -25,6 +25,10 @@ const JobPostEdit = () => {
     skill: '',
     address: ''
   });
+
+  const handleFileChange = (e) => {
+    setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
+  };
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -82,96 +86,170 @@ const JobPostEdit = () => {
     }));
   };
 
-  if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
+  if (error) return <ErrorMessage>{error}</ErrorMessage>;
 
   return (
-    <Container>
-      <Form onSubmit={handleSubmit}>
-        <FormGroup>
-          <Label>제목</Label>
-          <Input
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-          />
-        </FormGroup>
+    <>
+      <GlobalStyle />
+      <Container>
+        <Title>채용 공고 수정</Title>
+        <Form onSubmit={handleSubmit}>
+          <FormGroup>
+            <Label>제목 *</Label>
+            <Input
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+            />
+          </FormGroup>
 
-        <FormGroup>
-          <Label>상세내용</Label>
-          <ReactQuill
-            value={formData.content}
-            onChange={handleQuillChange}
-          />
-        </FormGroup>
+          <FormGroup>
+            <Label>상세내용 *</Label>
+            <QuillWrapper>
+              <ReactQuill
+                value={formData.content}
+                onChange={handleQuillChange}
+              />
+            </QuillWrapper>
+          </FormGroup>
 
-        <FormGroup>
-          <Label>직무</Label>
-          <Input
-            name="recruitJob"
-            value={formData.recruitJob}
-            onChange={handleChange}
-          />
-        </FormGroup>
+          <FormGroup>
+            <Label>모집 인원 *</Label>
+            <Input
+              name="recruitJob"
+              value={formData.recruitField}
+              onChange={handleChange}
+            />
+          </FormGroup>
 
-        <FormGroup>
-          <Label>급여</Label>
-          <Input
-            name="salary"
-            value={formData.salary}
-            onChange={handleChange}
-          />
-        </FormGroup>
+          <FormGroup>
+            <Label>모집 직무 *</Label>
+            <Input
+              id="recruitJob"
+              name="recruitJob"
+              value={formData.recruitJob}
+              onChange={handleChange}
+            />
+          </FormGroup>
 
-        <FormGroup>
-          <Label>기술스택</Label>
-          <Input
-            name="skill"
-            value={formData.skill}
-            onChange={handleChange}
-          />
-        </FormGroup>
+          <FormGroup>
+            <Label>급여</Label>
+            <Input
+              name="salary"
+              value={formData.salary}
+              onChange={handleChange}
+            />
+          </FormGroup>
 
-        <ButtonGroup>
-          <SubmitButton type="submit" disabled={isSubmitting}>
-            {isSubmitting ? '수정 중...' : '수정하기'}
-          </SubmitButton>
-          <CancelButton type="button" onClick={() => navigate(`/jobs/${code}`)}>
-            취소
-          </CancelButton>
-        </ButtonGroup>
-      </Form>
-    </Container>
+          <FormGroup>
+            <Label
+              htmlFor="postingDeadline">공고마감일 *</Label>
+            <Input
+              id="postingDeadline"
+              name="postingDeadline"
+              type="datetime-local"
+              value={formData.postingDeadline}
+              onChange={handleChange}
+              min={new Date().toISOString().slice(0, 16)}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="workExperience">경력 *</Label>
+            <Input
+              id="workExperience"
+              name="workExperience"
+              type="number"
+              value={formData.workExperience}
+              onChange={handleChange}
+              min="0"
+              placeholder="숫자만 입력" />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="skills">근무지</Label>
+            <Input
+              id="address"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="실근무지를 기재해주세요"
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label>기술스택</Label>
+            <Input
+              name="skill"
+              value={formData.skill}
+              onChange={handleChange}
+            />
+          </FormGroup>
+
+          <FormGroup>
+            <Label htmlFor="image">공고 이미지</Label>
+            <Input
+              id="image"
+              name="image"
+              type="file"
+              onChange={handleFileChange}
+              style={{ marginTop: '10px' }}
+            />
+          </FormGroup>
+
+          <ButtonGroup>
+            <SubmitButton type="submit" disabled={isSubmitting}>
+              {isSubmitting ? '수정 중...' : '수정하기'}
+            </SubmitButton>
+            <CancelButton type="button" onClick={() => navigate(`/jobs/${code}`)}>
+              취소
+            </CancelButton>
+          </ButtonGroup>
+        </Form>
+      </Container>
+    </>
   );
 };
 
 const Container = styled.div`
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
+  max-width: 950px;
+  margin: 40px auto;
+  padding: 40px;
+  background-color: #ffffff;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 `;
 
 const Form = styled.form`
-  background: white;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
 const Label = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 14px;
 `;
 
 const Input = styled.input`
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 12px 16px;
+  border: 2px solid ${(props) => (props.hasError ? '#e74c3c' : '#bdc3c7')};
+  border-radius: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
 `;
 
 const ButtonGroup = styled.div`
@@ -181,10 +259,24 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-weight: 500;
+  padding: 14px 24px;
+  background-color: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background-color: #27ae60;
+  }
+
+  &:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+  }
 `;
 
 const SubmitButton = styled(Button)`
@@ -205,10 +297,37 @@ const CancelButton = styled(Button)`
   }
 `;
 
-const ErrorWrapper = styled.div`
-  color: red;
+const ErrorMessage = styled.div`
+  color: #e74c3c;
+  font-size: 14px;
+  margin-top: 4px;
+`;
+
+const QuillWrapper = styled.div`
+  .ql-container {
+    min-height: 300px;
+    font-size: 1rem;
+  }
+
+  .ql-editor {
+    min-height: 300px;
+  }
+`;
+
+const GlobalStyle = createGlobalStyle`
+  body {
+    background-color: #f0f2f5;
+    font-family: 'Noto Sans KR', sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+`;
+
+const Title = styled.h1`
+  color: #2c3e50;
+  font-size: 28px;
+  margin-bottom: 30px;
   text-align: center;
-  padding: 2rem;
 `;
 
 export default JobPostEdit;
