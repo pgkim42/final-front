@@ -3,10 +3,9 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { useSelector } from 'react-redux';
 
 const formatLocalDateTime = (localDateTime) => {
-  if(!localDateTime) return "없음";
+  if (!localDateTime) return "없음";
   const date = new Date(localDateTime);
   return format(date, 'yyyy-mm-dd'); // date-fns의 format 함수 사용
 };
@@ -15,10 +14,14 @@ const formatLocalDateTime = (localDateTime) => {
 const ResumeList = () => {
   // 초기값 설정
   const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const token = localStorage.getItem('token');
   const userCode = localStorage.getItem('userCode');
 
   // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
+  
   useEffect(()=>{
     const apicall = async () => {
       // Postman 보고 API 주소 수정
@@ -67,13 +70,10 @@ const ResumeList = () => {
     }
   };
   
-
   // 상태 변화 확인
   useEffect(() => {
     console.log("Resumes state updated:", resumes);
   }, [resumes]);
-
-  
 
   return (
     <Container>
@@ -109,6 +109,7 @@ const ResumeList = () => {
     </Container>
   );
 };
+
 
 const Container = styled.div`
   max-width: 1200px;
