@@ -191,6 +191,39 @@ const UserMyPage = () => {
     }
   }, []);
 
+
+  const [comstats, setComStats] = useState({
+    totalComApplications: 0,
+    ongoingComApplications: 0,
+  })
+
+  useEffect(() => {
+    const userCode = localStorage.getItem("userCode");
+    const token = localStorage.getItem("token"); // JWT 토큰 가져오기
+
+    if (userCode && token) {
+      axios
+        .get(`http://localhost:8080/apply/applications/count`, {
+          params: { userCode },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setComStats((prevStats) => ({
+            ...prevStats,
+            totalComApplications: response.data.totalComApplications,
+            ongoingComApplications: response.data.ongoingComApplications,
+          }));
+        })
+        .catch((error) => {
+          console.error("Error fetching application count:", error);
+        });
+
+
+    } else {
+      console.error("Missing userCode or token in localStorage");
+    }
+  }, []);
+
   return (
     <Container>
       <Title>마이페이지</Title>
@@ -235,23 +268,44 @@ const UserMyPage = () => {
           </Section>
         )}
 
-        <Section>
-          <SectionTitle>지원 현황</SectionTitle>
-          <StatsGrid>
-            <StatCard>
-              <StatNumber>{stats.totalApplications}</StatNumber>
-              <StatLabel>전체 지원</StatLabel>
-            </StatCard>
-            <StatCard>
-              <StatNumber>{stats.ongoingApplications}</StatNumber>
-              <StatLabel>진행중</StatLabel>
-            </StatCard>
+        {userInfo.userType !== "company" && (
+          <Section>
+            <SectionTitle>지원 현황</SectionTitle>
+            <StatsGrid>
+              <StatCard>
+                <StatNumber>{stats.totalApplications}</StatNumber>
+                <StatLabel>전체 지원</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatNumber>{stats.ongoingApplications}</StatNumber>
+                <StatLabel>진행중</StatLabel>
+              </StatCard>
 
-          </StatsGrid>
-          <ViewMoreButton as={Link} to="/profile/applications">
-            지원 현황 보기
-          </ViewMoreButton>
-        </Section>
+            </StatsGrid>
+            <ViewMoreButton as={Link} to="/profile/applications">
+              지원 현황 보기
+            </ViewMoreButton>
+          </Section>
+        )}
+
+        {userInfo.userType === "company" && (
+          <Section>
+            <SectionTitle>공고내 지원자 현황</SectionTitle>
+            <StatsGrid>
+              <StatCard>
+                <StatNumber>{comstats.totalComApplications}</StatNumber>
+                <StatLabel>전체</StatLabel>
+              </StatCard>
+              <StatCard>
+                <StatNumber>{comstats.ongoingComApplications}</StatNumber>
+                <StatLabel>진행중</StatLabel>
+              </StatCard>
+            </StatsGrid>
+            <ViewMoreButton as={Link} to="/company/applications">
+              지원 현황 보기
+            </ViewMoreButton>
+          </Section>
+        )}
 
         {userInfo.userType !== "company" && (
           <Section>
