@@ -59,19 +59,39 @@ const JobListPage = () => {
 
   useEffect(() => {
     const filtered = jobs.filter(job => {
+      // 검색어 검사 (대소문자 구분 없이 포함 여부 확인)
+      const lowerCaseSearchTerm = searchTerm?.toLowerCase() || "";
       const matchesSearch =
-        job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.address?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const jobSkills = job.skill?.split(',').map(s => s.trim()) || [];
-      const matchesSkills = selectedSkills.length === 0 ||
-        selectedSkills.every(skill => jobSkills.includes(skill));
-
+        !searchTerm ||
+        job.title?.toLowerCase().includes(lowerCaseSearchTerm) ||
+        job.address?.toLowerCase().includes(lowerCaseSearchTerm);
+  
+      // 스킬 필터링: 선택된 스킬 키워드가 스킬 목록에 시작하는지 검사
+      const allowedKeywords = ["react", "vue", "angular", "node.js", "java", "spring", "aws"];
+  
+      // job.skill을 배열로 변환하고 대소문자 무시
+      const jobSkills = job.skill
+        ?.split(',')
+        .map(skill => skill.trim().toLowerCase()) || [];
+  
+      // 선택된 스킬이 없으면 모든 항목 통과, 선택된 스킬이 있으면 부분 매칭
+      const matchesSkills =
+        selectedSkills.length === 0 ||
+        selectedSkills.every(selectedSkill => {
+          const lowerCaseSkill = selectedSkill.toLowerCase();
+          return jobSkills.some(jobSkill => 
+            allowedKeywords.includes(lowerCaseSkill) && jobSkill.startsWith(lowerCaseSkill)
+          );
+        });
+  
+      // 최종 조건: 검색어 검사 && 스킬 필터링
       return matchesSearch && matchesSkills;
     });
+  
     setFilteredJobs(filtered);
     setCurrentPage(1);
   }, [searchTerm, selectedSkills, jobs]);
+  
 
   if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
   if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
