@@ -3,7 +3,6 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
-import { useSelector } from 'react-redux';
 
 // 가짜데이터 -> API 호출
 // const dummyResumes = [
@@ -26,7 +25,7 @@ import { useSelector } from 'react-redux';
 // ];
 
 const formatLocalDateTime = (localDateTime) => {
-  if(!localDateTime) return "없음";
+  if (!localDateTime) return "없음";
   const date = new Date(localDateTime);
   return format(date, 'yyyy-mm-dd'); // date-fns의 format 함수 사용
 };
@@ -35,30 +34,40 @@ const formatLocalDateTime = (localDateTime) => {
 const ResumeList = () => {
   // 초기값 설정
   const [resumes, setResumes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const token = localStorage.getItem('token');
   const userCode = localStorage.getItem('userCode');
 
   // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
-  useEffect(()=>{
-    const apicall = async () => {
-      // Postman 보고 API 주소 수정
-      const response = await axios.get(`http://localhost:8080/resume/list`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        params: { 
-          userCode 
-        },
-      });
-      if (response.status === 200) {
+  useEffect(() => {
+    const fetchResumes = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8080/resume/list`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          params: { userCode }
+        });
+        console.log('API Response:', response.data);
         setResumes(response.data);
-      } else {
-        throw new Error(`api error: ${response.status} ${response.statusText}`);
+        setLoading(false);
+      } catch (error) {
+        console.error('이력서 조회 실패:', error);
+        setError('이력서를 불러오는데 실패했습니다.');
+        setLoading(false);
       }
-    
+    };
+
+    if (token && userCode) {
+      fetchResumes();
     }
-    apicall();
   }, [token, userCode]);
+
+  if (loading) return <div>로딩중...</div>;
+  if (error) return <div>{error}</div>;
+  if (!resumes.length) return <div>등록된 이력서가 없습니다.</div>;
 
   const handleDelete = (id) => {
     if (window.confirm('이력서를 삭제하시겠습니까?')) {
@@ -74,23 +83,37 @@ const ResumeList = () => {
       </Header>
 
       <ResumeGrid>
-        {resumes.map(resume => (
+        {resumes.map((resume) => (
           <ResumeCard key={resume.resumeCode}>
             <ResumeInfo>
-              <ResumeTitle>{resume.work}</ResumeTitle>
+              <ResumeTitle>{resume.work}</ResumeTitle> {/* 이력서 제목 */}
               <MetaInfo>
-                <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
-                {/* <UpdateDate>마지막 수정: {resume.updateDate}</UpdateDate> */}
+                {/* 마지막 수정 날짜가 없으면 생성 날짜 표시 */}
+                <UpdateDate>
+                  마지막 수정: {resume.updateDate ? formatLocalDateTime(resume.updateDate) : formatLocalDateTime(resume.createDate)}
+                </UpdateDate>
+                <div>기술 스택: {resume.skill || '미등록'}</div>
               </MetaInfo>
             </ResumeInfo>
             <ButtonGroup>
-              <ActionButton as={Link} to={`/resumes/modify/${resume.resumeCode}`} className="edit">
+              <ActionButton
+                as={Link}
+                to={`/resumes/modify/${resume.resumeCode}`}
+                className="edit"
+              >
                 수정
               </ActionButton>
-              <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">
+              <ActionButton
+                as={Link}
+                to={`/resumes/${resume.resumeCode}`}
+                className="preview"
+              >
                 상세
               </ActionButton>
-              <ActionButton onClick={() => handleDelete(resume.id)} className="delete">
+              <ActionButton
+                onClick={() => handleDelete(resume.resumeCode)}
+                className="delete"
+              >
                 삭제
               </ActionButton>
             </ButtonGroup>
