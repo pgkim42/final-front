@@ -1,50 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import axios from 'axios'; // axios 추가
 import CompanyLayout from './CompanyLayout';
 
 const CompanyApplications = () => {
   const [selectedJob, setSelectedJob] = useState('all');
+  const [applications, setApplications] = useState([]); // API로 가져온 데이터
+  const [jobs, setJobs] = useState([]); // 공고 데이터
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // 임시 데이터
-  const jobs = [
-    { id: 1, title: "프론트엔드 개발자" },
-    { id: 2, title: "백엔드 개발자" },
-    { id: 3, title: "DevOps 엔지니어" }
-  ];
+  // 백엔드 API로부터 데이터 가져오기
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/apply/jobPoster/applications', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`, // 예시 토큰 사용
+          },
+        });
+        setApplications(response.data);
+      } catch (error) {
+        console.error('Error fetching applications:', error);
+      }
+    };
 
-  const applications = [
-    {
-      id: 1,
-      jobId: 1,
-      applicantName: "홍길동",
-      email: "hong@mail.com",
-      status: "서류심사",
-      applyDate: "2024-03-15",
-      experience: "5년",
-      resumeUrl: "#"
-    },
-    {
-      id: 2,
-      jobId: 1,
-      applicantName: "김철수",
-      email: "kim@mail.com",
-      status: "1차면접",
-      applyDate: "2024-03-14",
-      experience: "3년",
-      resumeUrl: "#"
-    }
-  ];
+    fetchApplications();
+  }, []);
 
   const handleStatusChange = (applicationId, newStatus) => {
-    // API 호출 로직
     console.log(`Application ${applicationId} status changed to ${newStatus}`);
+    // API 호출 예시
+    axios.put(`/apply/${applicationId}/status`, { status: newStatus });
   };
 
-  const filteredApplications = selectedJob === 'all'
-    ? applications
-    : applications.filter(app => app.jobId === parseInt(selectedJob));
+  const filteredApplications =
+    selectedJob === 'all'
+      ? applications
+      : applications.filter((app) => app.jobCode === parseInt(selectedJob));
 
   return (
     <CompanyLayout>
@@ -57,8 +50,8 @@ const CompanyApplications = () => {
               onChange={(e) => setSelectedJob(e.target.value)}
             >
               <option value="all">전체 공고</option>
-              {jobs.map(job => (
-                <option key={job.id} value={job.id}>
+              {jobs.map((job) => (
+                <option key={job.jobCode} value={job.jobCode}>
                   {job.title}
                 </option>
               ))}
@@ -79,16 +72,16 @@ const CompanyApplications = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredApplications.map(app => (
-              <Tr key={app.id}>
-                <Td>{app.applicantName}</Td>
+            {filteredApplications.map((app) => (
+              <Tr key={app.applyCode}>
+                <Td>{app.name}</Td>
                 <Td>{app.email}</Td>
-                <Td>{jobs.find(job => job.id === app.jobId)?.title}</Td>
-                <Td>{app.experience}</Td>
-                <Td>{app.applyDate}</Td>
+                <Td>{app.title}</Td>
+                <Td>{app.workExperience}</Td>
+                <Td>{app.submissionDate}</Td>
                 <Td>
-                  <StatusBadge status={app.status}>
-                    {app.status}
+                  <StatusBadge status={app.applyStatus}>
+                    {app.applyStatus}
                   </StatusBadge>
                 </Td>
                 <Td>
@@ -97,8 +90,10 @@ const CompanyApplications = () => {
                       이력서
                     </ActionButton>
                     <StatusSelect
-                      value={app.status}
-                      onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                      value={app.applyStatus}
+                      onChange={(e) =>
+                        handleStatusChange(app.applyCode, e.target.value)
+                      }
                     >
                       <option value="서류심사">서류심사</option>
                       <option value="1차면접">1차면접</option>
