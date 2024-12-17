@@ -3,47 +3,21 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
 
-// const dummyResumes = [
-//   {
-//     id: 1,
-//     title: "신입 프론트엔드 개발자 이력서",
-//     createdAt: "2024-03-15",
-//     content: "React, JavaScript 중심의 웹 개발 경험",
-//     status: "active"
-//   },
-//   {
-//     id: 2,
-//     title: "포트폴리오 이력서",
-//     createdAt: "2024-03-10",
-//     content: "다수의 프로젝트 경험 보유",
-//     status: "active"
-//   },
-//   {
-//     id: 3,
-//     title: "경력 기술서",
-//     createdAt: "2024-03-05",
-//     content: "3년차 웹 개발자 경력 기술",
-//     status: "active"
-//   }
-// ];
-
-
 const JobResumeSubmit = () => {
   const { code } = useParams(); // URL의 code 파라미터 받기
-  const { jobCode } = useParams();
   const navigate = useNavigate();
   const [resumes, setResumes] = useState([]);
   const [selectedResume, setSelectedResume] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const userCode = localStorage.getItem('userCode');
 
   useEffect(() => {
-    // API 연동 전 더미데이터 사용
-    // setResumes(dummyResumes);
-
-    //  API 연동 코드 (나중에 사용)
     const fetchResumes = async () => {
       try {
         setLoading(true);
@@ -64,35 +38,70 @@ const JobResumeSubmit = () => {
   }, []);
 
   const handleSubmit = async () => {
-    if (!selectedResume) {
-      alert('이력서를 선택해주세요.');
-      return;
-    }
-
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
 
       const response = await axios.post(
         `http://localhost:8080/apply/applyto/${code}?resumeCode=${selectedResume}`,
-        {}, // 빈 객체를 body로 전송
+        {},
         {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         }
       );
 
-      console.log('API Response:', response); // 디버깅용
-      alert('지원이 완료되었습니다.');
-      navigate(`/jobs/${code}`);
+      setIsSuccess(true);
+      setModalMessage('지원이 완료되었습니다.');
+      setShowModal(true);
     } catch (err) {
-      console.error('API Error:', err); // 디버깅용
-      setError('지원에 실패했습니다.');
-      alert('지원에 실패했습니다. 지원 공고 목록으로 이동합니다.');
-      navigate('/jobs');
+      console.error('API Error:', err);
+      setIsSuccess(false);
+      setModalMessage('지원에 실패했습니다.');
+      setShowModal(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmitClick = () => {
+    if (!selectedResume) {
+      alert('이력서를 선택해주세요.');
+      return;
+    }
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowConfirmModal(false);
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `http://localhost:8080/apply/applyto/${code}?resumeCode=${selectedResume}`,
+        {},
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+      setIsSuccess(true);
+      setModalMessage('지원이 완료되었습니다.');
+      setShowModal(true);
+    } catch (err) {
+      console.error('API Error:', err);
+      setIsSuccess(false);
+      setModalMessage('지원에 실패했습니다.');
+      setShowModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    if (isSuccess) {
+      navigate(`/jobs/${code}`);
+    } else {
+      navigate('/jobs');
     }
   };
 
@@ -126,10 +135,35 @@ const JobResumeSubmit = () => {
         ))}
       </ResumeList>
       <ButtonGroup>
-        <SubmitButton onClick={handleSubmit} disabled={!selectedResume || loading}>
+        <SubmitButton onClick={handleSubmitClick} disabled={!selectedResume || loading}>
           지원하기
         </SubmitButton>
       </ButtonGroup>
+
+      {showConfirmModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>지원 확인</ModalTitle>
+            <ModalMessage>정말로 지원하시겠습니까?</ModalMessage>
+            <ModalButtonGroup>
+              <ConfirmButton onClick={handleConfirmSubmit}>확인</ConfirmButton>
+              <CancelButton onClick={() => setShowConfirmModal(false)}>취소</CancelButton>
+            </ModalButtonGroup>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {showModal && (
+        <Modal>
+          <ModalContent>
+            <ModalTitle>{isSuccess ? '지원 완료' : '지원 실패'}</ModalTitle>
+            <ModalMessage>{modalMessage}</ModalMessage>
+            <ModalButton onClick={handleModalClose}>
+              확인
+            </ModalButton>
+          </ModalContent>
+        </Modal>
+      )}
     </Container>
   );
 };
@@ -206,12 +240,6 @@ const SubmitButton = styled(Button)`
   }
 `;
 
-const CancelButton = styled(Button)`
-  background: white;
-  color: #e74c3c;
-  border: 1px solid #e74c3c;
-`;
-
 const LoadingWrapper = styled.div`
   text-align: center;
   padding: 2rem;
@@ -236,6 +264,85 @@ const ViewButton = styled.button`
   &:hover {
     background: #3498db;
     color: white;
+  }
+`;
+
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const ModalContent = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  width: 400px;
+  text-align: center;
+`;
+
+const ModalTitle = styled.h3`
+  margin-bottom: 1rem;
+  color: ${props => props.isSuccess ? '#2e7d32' : '#c62828'};
+`;
+
+const ModalMessage = styled.p`
+  margin-bottom: 1.5rem;
+`;
+
+const ModalButton = styled.button`
+  padding: 8px 16px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #1565c0;
+  }
+`;
+
+const ModalButtonGroup = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+`;
+
+const ConfirmButton = styled.button`
+  padding: 8px 16px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #1565c0;
+  }
+`;
+
+const CancelButton = styled.button`
+  padding: 8px 16px;
+  background-color: #e0e0e0;
+  color: #333;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #d5d5d5;
   }
 `;
 

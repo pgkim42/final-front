@@ -20,9 +20,6 @@ const UserMyPage = () => {
     companyAddress: '',
   });
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false);
-  const [isChecked, setIsChecked] = useState(false);
-  const [userInput, setUserInput] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -131,17 +128,47 @@ const UserMyPage = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchApplicationCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:8080/apply/myApply', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        const ongoingCount = response.data.filter(application =>
+          application.applyStatus !== 'ACCEPTED' && application.applyStatus !== 'REJECTED'
+        ).length;
+
+        setStats(prevStats => ({
+          ...prevStats,
+          ongoingApplications: ongoingCount
+        }));
+
+        setStats(prevStats => ({
+          ...prevStats,
+          totalApplications: response.data.length
+        }));
+      } catch (error) {
+        console.error('Error fetching application count:', error);
+      }
+    };
+
+    fetchApplicationCount();
+  }, []);
+
   const [stats, setStats] = useState({
-    totalApplications: 12,
-    ongoingApplications: 5,
-    savedJobs: 8,
+    totalApplications: 0,
+    ongoingApplications: 0,
     resumes: 0, // 초기값 설정
   });
 
   useEffect(() => {
     const userCode = localStorage.getItem("userCode");
     const token = localStorage.getItem("token"); // JWT 토큰 가져오기
-  
+
     if (userCode && token) {
       axios
         .get(`http://localhost:8080/resume/count`, {
@@ -219,10 +246,7 @@ const UserMyPage = () => {
               <StatNumber>{stats.ongoingApplications}</StatNumber>
               <StatLabel>진행중</StatLabel>
             </StatCard>
-            <StatCard>
-              <StatNumber>{stats.savedJobs}</StatNumber>
-              <StatLabel>관심공고</StatLabel>
-            </StatCard>
+
           </StatsGrid>
           <ViewMoreButton as={Link} to="/profile/applications">
             지원 현황 보기
@@ -397,45 +421,11 @@ const EditButton = styled.button`
   }
 `;
 
-const RemoveButton = styled.button`
-  margin: 10px 0 0 10px;
-  padding: 10px;
-  border: 1px solid #3498db;
-  border-radius: 6px;
-  background: white;
-  color: #3498db;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background 0.3s, color 0.3s;
-
-  &:hover {
-    background: #e35946;
-    color: #000000;
-  }
-`;
-
-const RemoveSocialButton = styled.button`
-  margin-top: 10px;
-  padding: 10px;
-  border: 1px solid #3498db;
-  border-radius: 6px;
-  background: white;
-  color: #3498db;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background 0.3s, color 0.3s;
-
-  &:hover {
-    background: #e35946;
-    color: #000000;
-  }
-`;
-
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 2rem;
 `;
 
 const StatCard = styled.div`

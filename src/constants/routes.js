@@ -24,6 +24,7 @@ export const ROUTES = {
     MY_PAGE: '/profile',
     EDIT: '/profile/edit',
     APPLICATIONS: '/profile/applications',
+    APPLICATION_DETAIL: '/profile/applications/:id',
     COMPANY: '/company/:id',
 
     COMPANY_TEST: '/company_test',

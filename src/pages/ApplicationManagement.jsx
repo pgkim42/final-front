@@ -1,68 +1,87 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import styled from 'styled-components';
 
-const dummyApplications = [
-  {
-    id: 1,
-    jobTitle: "시니어 프론트엔드 개발자",
-    companyName: "테크스타트",
-    applyDate: "2024-03-15",
-    status: "서류통과",
-    nextStep: "1차 면접 예정",
-    companyLogo: "https://via.placeholder.com/40"
-  },
-  {
-    id: 2,
-    jobTitle: "백엔드 개발자",
-    companyName: "네오테크",
-    applyDate: "2024-03-10",
-    status: "지원완료",
-    nextStep: "서류 검토중",
-    companyLogo: "https://via.placeholder.com/40"
-  },
-  {
-    id: 3,
-    jobTitle: "DevOps 엔지니어",
-    companyName: "클라우드테크",
-    applyDate: "2024-03-08",
-    status: "면접예정",
-    nextStep: "기술면접 3/25",
-    companyLogo: "https://via.placeholder.com/40"
-  },
-  {
-    id: 4,
-    jobTitle: "풀스택 개발자",
-    companyName: "디지털솔루션즈",
-    applyDate: "2024-03-05",
-    status: "최종합격",
-    nextStep: "입사예정 4/1",
-    companyLogo: "https://via.placeholder.com/40"
-  },
-  {
-    id: 5,
-    jobTitle: "모바일 앱 개발자",
-    companyName: "앱스튜디오",
-    applyDate: "2024-03-01",
-    status: "불합격",
-    nextStep: "지원종료",
-    companyLogo: "https://via.placeholder.com/40"
-  },
-  {
-    id: 6,
-    jobTitle: "데이터 엔지니어",
-    companyName: "데이터랩스",
-    applyDate: "2024-02-28",
-    status: "서류통과",
-    nextStep: "2차 면접 예정",
-    companyLogo: "https://via.placeholder.com/40"
-  }
-];
+const STATUS_MAPPING = {
+  'APPLIED': '지원완료',
+  'PASSED': '서류통과',
+  'INTERVIEW': '면접예정',
+  'ACCEPTED': '최종합격',
+  'REJECTED': '불합격'
+};
+
+function formatDateTime(dateTimeStr) {
+  const date = new Date(dateTimeStr);
+
+  // 날짜를 "2024년 12월 17일" 형식으로 변환
+  const dateFormat = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+
+  // 시간을 "14시 01분" 형식으로 변환
+  const timeFormat = new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false, // 24시간 형식
+  }).format(date);
+
+  return `${dateFormat} ${timeFormat}`;
+}
 
 const ApplicationManagement = () => {
-  const [applications, setApplications] = useState(dummyApplications);
+  const [applications, setApplications] = useState([]);
   const [selectedStatus, setSelectedStatus] = useState('전체');
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const handleDeleteClick = (applyCode) => {
+    setSelectedApplicationId(applyCode);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:8080/apply/remove/${selectedApplicationId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setApplications(applications.filter(app => app.applyCode !== selectedApplicationId));
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Failed to withdraw application:', error);
+      alert('지원 취소에 실패했습니다.');
+    }
+  };
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:8080/apply/myApply', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        console.log('API Response:', response.data); // 디버깅용
+        setApplications(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('API Error:', err);
+        setError('지원 내역을 불러오는데 실패했습니다.');
+        setLoading(false);
+      }
+    };
+
+    fetchApplications();
+  }, []);
+
+  if (loading) return <div>로딩중...</div>;
+  if (error) return <div>{error}</div>;
 
   const handleWithdraw = (applicationId) => {
     setSelectedApplicationId(applicationId);
@@ -75,28 +94,49 @@ const ApplicationManagement = () => {
   };
 
   const getFilteredApplications = () => {
+    console.log('Current Status:', selectedStatus);
+    console.log('All Applications:', applications);
+
     if (selectedStatus === '전체') {
       return applications;
     }
-    return applications.filter(app => app.status === selectedStatus);
+
+    // Fix: Use applyStatus instead of status
+    return applications.filter(app => {
+      console.log('Comparing:', {
+        applicationStatus: app.applyStatus,
+        selectedStatus: selectedStatus,
+        matches: app.applyStatus === selectedStatus
+      });
+      return app.applyStatus === selectedStatus;
+    });
   };
+
 
   return (
     <Container>
       <Header>
         <Title>지원 현황 관리</Title>
         <StatusFilter>
-          {['전체', '지원완료', '서류통과', '면접예정', '최종합격', '불합격'].map(status => (
+          {[
+            { key: '전체', label: '전체' },
+            { key: 'APPLIED', label: '지원완료' },
+            { key: 'PASSED', label: '서류통과' },
+            { key: 'INTERVIEW', label: '면접예정' },
+            { key: 'ACCEPTED', label: '최종합격' },
+            { key: 'REJECTED', label: '불합격' }
+          ].map(({ key, label }) => (
             <FilterButton
-              key={status}
-              active={selectedStatus === status}
-              onClick={() => setSelectedStatus(status)}
+              key={key}
+              active={selectedStatus === key}
+              onClick={() => setSelectedStatus(key)}
             >
-              {status}
+              {label}
             </FilterButton>
           ))}
         </StatusFilter>
       </Header>
+
 
       <ApplicationGrid>
         {getFilteredApplications().map(application => (
@@ -107,38 +147,39 @@ const ApplicationManagement = () => {
                 <CompanyName>{application.companyName}</CompanyName>
                 <JobTitle>{application.jobTitle}</JobTitle>
               </div>
+
             </CompanyInfo>
 
             <StatusSection>
-              <StatusBadge status={application.status}>
-                {application.status}
+              <StatusBadge status={application.applyStatus}>
+                {STATUS_MAPPING[application.applyStatus] || application.applyStatus}
               </StatusBadge>
-              <NextStep>{application.nextStep}</NextStep>
             </StatusSection>
 
             <Footer>
-              <ApplyDate>지원일: {application.applyDate}</ApplyDate>
+              <ApplyDate>
+                {formatDateTime(application.submissionDate)}</ApplyDate>
               <ButtonGroup>
-                <ViewButton>상세보기</ViewButton>
-                <WithdrawButton onClick={() => handleWithdraw(application.id)}>
-                  지원취소
-                </WithdrawButton>
+                <ViewButton onClick={() => window.location.href =
+                  `http://localhost:3000/profile/applications/${application.applyCode}`}>상세보기
+                </ViewButton>
+                <DeleteButton onClick={() => handleDeleteClick(application.applyCode)}>
+                  취소
+                </DeleteButton>
               </ButtonGroup>
             </Footer>
           </ApplicationCard>
         ))}
       </ApplicationGrid>
 
-      {showWithdrawModal && (
+      {showDeleteModal && (
         <Modal>
           <ModalContent>
             <h3>지원 취소</h3>
             <p>정말로 지원을 취소하시겠습니까?</p>
             <ModalButtons>
-              <ConfirmButton onClick={confirmWithdraw}>확인</ConfirmButton>
-              <CancelButton onClick={() => setShowWithdrawModal(false)}>
-                취소
-              </CancelButton>
+              <ConfirmButton onClick={handleConfirmDelete}>확인</ConfirmButton>
+              <CancelButton onClick={() => setShowDeleteModal(false)}>취소</CancelButton>
             </ModalButtons>
           </ModalContent>
         </Modal>
@@ -223,27 +264,27 @@ const StatusSection = styled.div`
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
   
   ${props => {
     switch (props.status) {
-      case '서류통과':
+      case 'APPLIED':
+        return 'background: #e3f2fd; color: #1565c0;';
+      case 'PASSED':
         return 'background: #e8f5e9; color: #2e7d32;';
-      case '불합격':
+      case 'INTERVIEW':
+        return 'background: #fff3e0; color: #ef6c00;';
+      case 'ACCEPTED':
+        return 'background: #e8f5e9; color: #2e7d32;';
+      case 'REJECTED':
         return 'background: #ffebee; color: #c62828;';
       default:
-        return 'background: #e3f2fd; color: #1565c0;';
+        return 'background: #f5f5f5; color: #666666;';
     }
   }}
-`;
-
-const NextStep = styled.div`
-  margin-top: 0.5rem;
-  color: #7f8c8d;
-  font-size: 0.9rem;
 `;
 
 const Footer = styled.div`
@@ -278,7 +319,7 @@ const ViewButton = styled.button`
   }
 `;
 
-const WithdrawButton = styled.button`
+const DeleteButton = styled.button`
   padding: 0.5rem 1rem;
   border: 1px solid #e74c3c;
   border-radius: 6px;

@@ -51,6 +51,7 @@ import TestResume from './TestResume';
 import JobPostEdit from './features/job/JobPostEdit';
 import UserSocialMyPage from './features/user/view/MyPage/UserSocialMyPage';
 import CompanyOverview from './features/company/CompanyOverview';
+import ApplicationDetail from './pages/ApplicationDetail';
 
 function App() {
   return (
@@ -82,6 +83,7 @@ function App() {
           <Route path={ROUTES.PROFILE.MY_PAGE} element={<UserMyPage />} />
           <Route path={ROUTES.PROFILE.SOCIAL_MY_PAGE} element={<UserSocialMyPage />} />
           <Route path={ROUTES.PROFILE.EDIT} element={<ProfileEdit />} />
+          <Route path={ROUTES.PROFILE.APPLICATION_DETAIL} element={<ApplicationDetail />} />
 
           {/* <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyDetail />} /> */}
 
