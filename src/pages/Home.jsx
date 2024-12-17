@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Grid, Paper, Typography, Button } from '@mui/material';
 import axios from 'axios';
 import StyledCarousel from '../components/StyledCarousel';
+import { Link } from 'react-router-dom';
 
 
 // const jobTitle = [
@@ -42,7 +43,7 @@ const Home = () => {
   const [jobListings, setJobListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const ITEM_PER_PAGE = 5; // 페이지당 표시할 아이템 수
+  const ITEM_PER_PAGE = 50; // 페이지당 표시할 아이템 수
 
   const fetchJobListings = async () => {
     try {
@@ -51,12 +52,16 @@ const Home = () => {
       if (!response.data) throw new Error('데이터가 없습니다.');
 
       // 이미지 경로 추가(imgPath 사용)
-      const jobWithImage = response.data.map(job => ({
-        ...job,
-        companyLogo: job.imgPath || 'https://via.placeholder.com/150',
-        companyName: job.profile.companyName || '기업명 미상',
-        
-      }));
+      const jobWithImage = response.data
+        .map(job => ({
+          ...job,
+          companyLogo: job.imgPath || 'https://via.placeholder.com/150',
+          companyName: job.profile.companyName || '기업명 미상',
+          postingDate: job.postingDate ? new Date(job.postingDate) : null, // LocalDateTime 파싱
+        }))
+        .sort((a, b) => {
+          return b.postingDate - a.postingDate; // 최신순 정렬
+        });
 
       setJobListings(jobWithImage);
     } catch (err) {
@@ -86,52 +91,57 @@ const Home = () => {
       {/* 채용공고 리스트 */}
       <section className="job-list">
         <Grid container spacing={3} style={{ marginTop: '2rem' }}>
-          {jobListings.slice(0, ITEM_PER_PAGE).map((job, index) => ( // 첫 페이지 아이템만 표시
-            <Grid item xs={12} sm={6} md={3} key={index}>
-              <Paper
-                elevation={3}
-                style={{
-                  padding: '1.5rem',
-                  textAlign: 'center',
-                  borderRadius: '8px',
-                  backgroundColor: '#f9f9f9',
-                }}
-              >
-                {/* 공고 이미지 */}
-                <img
-                  src={job.companyLogo} // 연동된 이미지 경로
-                  alt={job.companyName}
-                  style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px' }}
-                />
-                공고 정보
-                <Typography variant="h6" style={{ margin: '1rem 0' }}>
-                  {job.title}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  {job.companyName || '기업명 미상'}
-                </Typography>
-                <Typography variant="body2" style={{ margin: '0.5rem 0' }}>
-                  {job.address || '위치 정보 없음'}
-                </Typography>
-                <Typography variant="body2" color="textSecondary">
-                  급여: {job.salary || '협의 후 결정'}
-                </Typography>
-                {/* 기술 스택 */}
-                <div style={{ marginTop: '1rem' }}>
-                  {job.skill?.split(',').map((skill, idx) => (
-                    <Button
-                      key={idx}
-                      variant="outlined"
-                      size="small"
-                      style={{ margin: '4px', textTransform: 'none' }}
-                    >
-                      {skill.trim()}
-                    </Button>
-                  ))}
-                </div>
-              </Paper>
-            </Grid>
-          ))}
+          {jobListings
+            .filter(job => job.postingStatus !== false) // 마감된 공고 제외
+            .slice(0, ITEM_PER_PAGE) // 페이지당 아이템 수만큼 표시
+            .map((job, index) => ( // 첫 페이지 아이템만 표시
+              <Grid item xs={12} sm={6} md={3} key={index}>
+                <Link to={`/jobs/${job.jobCode}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <Paper
+                    elevation={3}
+                    style={{
+                      padding: '1.5rem',
+                      textAlign: 'center',
+                      borderRadius: '8px',
+                      backgroundColor: '#f9f9f9',
+                    }}
+                  >
+                    {/* 공고 이미지 */}
+                    <img
+                      src={job.companyLogo} // 연동된 이미지 경로
+                      alt={job.companyName}
+                      style={{ width: '100%', height: '150px', objectFit: 'cover', borderRadius: '8px' }}
+                    />
+                    공고 정보
+                    <Typography variant="h6" style={{ margin: '1rem 0' }}>
+                      {job.title}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      {job.companyName || '기업명 미상'}
+                    </Typography>
+                    <Typography variant="body2" style={{ margin: '0.5rem 0' }}>
+                      {job.address || '위치 정보 없음'}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      급여: {job.salary || '협의 후 결정'}
+                    </Typography>
+                    {/* 기술 스택 */}
+                    <div style={{ marginTop: '1rem' }}>
+                      {job.skill?.split(',').map((skill, idx) => (
+                        <Button
+                          key={idx}
+                          variant="outlined"
+                          size="small"
+                          style={{ margin: '4px', textTransform: 'none' }}
+                        >
+                          {skill.trim()}
+                        </Button>
+                      ))}
+                    </div>
+                  </Paper>
+                </Link>
+              </Grid>
+            ))}
         </Grid>
       </section>
     </div>

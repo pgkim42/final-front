@@ -21,25 +21,27 @@ const ResumeList = () => {
   const userCode = localStorage.getItem('userCode');
 
   // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
-  
-  useEffect(()=>{
+
+  useEffect(() => {
     const apicall = async () => {
       // Postman 보고 API 주소 수정
       const response = await axios.get(`http://localhost:8080/resume/list`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
-        params: { 
-          userCode 
+        params: {
+          userCode
         },
       });
       if (response.status === 200) {
         console.log("API Response Data:", response.data); // 데이터 구조 확인
-        setResumes(response.data);
+
+        const sortedResumes = [...response.data].reverse();
+        setResumes(sortedResumes);
       } else {
         throw new Error(`api error: ${response.status} ${response.statusText}`);
       }
-    
+
     }
     apicall();
   }, [token, userCode]);
@@ -47,15 +49,15 @@ const ResumeList = () => {
   // 삭제 핸들러
   const handleDelete = async (resumeCode) => {
     if (!window.confirm('이력서를 삭제하시겠습니까?')) return;
-  
+
     try {
       const response = await axios.delete(`http://localhost:8080/resume/remove/${resumeCode}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-  
+
       if (response.status === 204) { // 204 상태 처리
         console.log(`Deleted successfully, resumeCode: ${resumeCode}`);
-        
+
         // 상태 업데이트
         setResumes((prevResumes) => {
           const updatedResumes = prevResumes.filter((resume) => resume.resumeCode !== resumeCode);
@@ -69,7 +71,7 @@ const ResumeList = () => {
       console.error("이력서 삭제 실패:", error);
     }
   };
-  
+
   // 상태 변화 확인
   useEffect(() => {
     console.log("Resumes state updated:", resumes);
@@ -88,8 +90,9 @@ const ResumeList = () => {
             <ResumeInfo>
               <ResumeTitle>{resume.work}</ResumeTitle>
               <MetaInfo>
-                <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
-                {/* <UpdateDate>마지막 수정: {resume.updateDate}</UpdateDate> */}
+                <UpdateDate>마지막 수정: {resume.updateDate && !isNaN(new Date(resume.updateDate))
+                  ? format(new Date(resume.updateDate), 'yyyy-MM-dd')
+                  : " "}</UpdateDate>
               </MetaInfo>
             </ResumeInfo>
             <ButtonGroup>

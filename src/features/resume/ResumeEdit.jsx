@@ -119,13 +119,13 @@ const ResumeEdit = () => {
     }
   };
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setBoard((prevBoard) => ({
-      ...prevBoard,
-      [name]: value,
-    }));
-  };
+  // const handleChange = (event) => {
+  //   const { name, value } = event.target;
+  //   setBoard((prevBoard) => ({
+  //     ...prevBoard,
+  //     [name]: value,
+  //   }));
+  // };
 
   const handleArrayChange = (index, field, value, arrayName) => {
     setBoard((prev) => ({

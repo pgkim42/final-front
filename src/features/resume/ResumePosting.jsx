@@ -22,7 +22,7 @@ import {
   QuillWrapper,
 } from "../../styles/ResumeStyles";
 
-const name = localStorage.getItem("name");
+const name = localStorage.getItem("name"); // 로컬 스토리지에 name이 없으면 null 또는 undefined가 반환
 
 const ResumePosting = ({ onSubmit }) => {
 
@@ -31,7 +31,7 @@ const ResumePosting = ({ onSubmit }) => {
   console.log("onSubmit prop:", onSubmit); // 컴포넌트가 렌더링될 때 전달된 onSubmit을 출력
   // 상태 관리
   const [introduce, setIntroduce] = useState(""); // 소개글
-  const [work, setWork] = useState(""); // 담당 업무
+  const [work, setWork] = useState(""); // 제목
   const [link, setLink] = useState(""); // 링크
   const [workExperience, setWorkExperience] = useState(""); // 경력(년차)
   const [experienceDetail, setexperienceDetail] = useState([
