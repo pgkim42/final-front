@@ -4,26 +4,6 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
 
-// 가짜데이터 -> API 호출
-// const dummyResumes = [
-//   {
-//     id: 1,
-//     title: "프론트엔드 개발자 이력서",
-//     createdAt: "2024-02-15",
-//     updatedAt: "2024-03-10",
-//     isPublic: true,
-//     category: "개발"
-//   },
-//   {
-//     id: 2,
-//     title: "신입 개발자 이력서",
-//     createdAt: "2024-01-20",
-//     updatedAt: "2024-03-15",
-//     isPublic: false,
-//     category: "개발"
-//   }
-// ];
-
 const formatLocalDateTime = (localDateTime) => {
   if (!localDateTime) return "없음";
   const date = new Date(localDateTime);
@@ -41,39 +21,59 @@ const ResumeList = () => {
   const userCode = localStorage.getItem('userCode');
 
   // useEffect 함수를 써서 페이지가 생성될때 API를 한번만 호출
-  useEffect(() => {
-    const fetchResumes = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8080/resume/list`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-          params: { userCode }
-        });
-        console.log('API Response:', response.data);
+  
+  useEffect(()=>{
+    const apicall = async () => {
+      // Postman 보고 API 주소 수정
+      const response = await axios.get(`http://localhost:8080/resume/list`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        params: { 
+          userCode 
+        },
+      });
+      if (response.status === 200) {
+        console.log("API Response Data:", response.data); // 데이터 구조 확인
         setResumes(response.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('이력서 조회 실패:', error);
-        setError('이력서를 불러오는데 실패했습니다.');
-        setLoading(false);
+      } else {
+        throw new Error(`api error: ${response.status} ${response.statusText}`);
       }
-    };
-
-    if (token && userCode) {
-      fetchResumes();
+    
     }
+    apicall();
   }, [token, userCode]);
 
-  if (loading) return <div>로딩중...</div>;
-  if (error) return <div>{error}</div>;
-  if (!resumes.length) return <div>등록된 이력서가 없습니다.</div>;
-
-  const handleDelete = (id) => {
-    if (window.confirm('이력서를 삭제하시겠습니까?')) {
-      setResumes(resumes.filter(resume => resume.id !== id));
+  // 삭제 핸들러
+  const handleDelete = async (resumeCode) => {
+    if (!window.confirm('이력서를 삭제하시겠습니까?')) return;
+  
+    try {
+      const response = await axios.delete(`http://localhost:8080/resume/remove/${resumeCode}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      if (response.status === 204) { // 204 상태 처리
+        console.log(`Deleted successfully, resumeCode: ${resumeCode}`);
+        
+        // 상태 업데이트
+        setResumes((prevResumes) => {
+          const updatedResumes = prevResumes.filter((resume) => resume.resumeCode !== resumeCode);
+          console.log("Updated resumes:", updatedResumes);
+          return updatedResumes;
+        });
+      } else {
+        console.warn("Unexpected response:", response.status);
+      }
+    } catch (error) {
+      console.error("이력서 삭제 실패:", error);
     }
   };
+  
+  // 상태 변화 확인
+  useEffect(() => {
+    console.log("Resumes state updated:", resumes);
+  }, [resumes]);
 
   return (
     <Container>
@@ -83,37 +83,23 @@ const ResumeList = () => {
       </Header>
 
       <ResumeGrid>
-        {resumes.map((resume) => (
+        {resumes.map(resume => (
           <ResumeCard key={resume.resumeCode}>
             <ResumeInfo>
-              <ResumeTitle>{resume.work}</ResumeTitle> {/* 이력서 제목 */}
+              <ResumeTitle>{resume.work}</ResumeTitle>
               <MetaInfo>
-                {/* 마지막 수정 날짜가 없으면 생성 날짜 표시 */}
-                <UpdateDate>
-                  마지막 수정: {resume.updateDate ? formatLocalDateTime(resume.updateDate) : formatLocalDateTime(resume.createDate)}
-                </UpdateDate>
-                <div>기술 스택: {resume.skill || '미등록'}</div>
+                <UpdateDate>마지막 수정: {formatLocalDateTime(resume.updateDate)}</UpdateDate>
+                {/* <UpdateDate>마지막 수정: {resume.updateDate}</UpdateDate> */}
               </MetaInfo>
             </ResumeInfo>
             <ButtonGroup>
-              <ActionButton
-                as={Link}
-                to={`/resumes/modify/${resume.resumeCode}`}
-                className="edit"
-              >
+              <ActionButton as={Link} to={`/resumes/modify/${resume.resumeCode}`} className="edit">
                 수정
               </ActionButton>
-              <ActionButton
-                as={Link}
-                to={`/resumes/${resume.resumeCode}`}
-                className="preview"
-              >
+              <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">
                 상세
               </ActionButton>
-              <ActionButton
-                onClick={() => handleDelete(resume.resumeCode)}
-                className="delete"
-              >
+              <ActionButton onClick={() => handleDelete(resume.resumeCode)} className="delete">
                 삭제
               </ActionButton>
             </ButtonGroup>
@@ -123,6 +109,7 @@ const ResumeList = () => {
     </Container>
   );
 };
+
 
 const Container = styled.div`
   max-width: 1200px;
