@@ -1,30 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
+import axios from 'axios';
 
-const dummyResumes = [
-  {
-    id: 1,
-    title: "신입 프론트엔드 개발자 이력서",
-    createdAt: "2024-03-15",
-    content: "React, JavaScript 중심의 웹 개발 경험",
-    status: "active"
-  },
-  {
-    id: 2,
-    title: "포트폴리오 이력서",
-    createdAt: "2024-03-10",
-    content: "다수의 프로젝트 경험 보유",
-    status: "active"
-  },
-  {
-    id: 3,
-    title: "경력 기술서",
-    createdAt: "2024-03-05",
-    content: "3년차 웹 개발자 경력 기술",
-    status: "active"
-  }
-];
+// const dummyResumes = [
+//   {
+//     id: 1,
+//     title: "신입 프론트엔드 개발자 이력서",
+//     createdAt: "2024-03-15",
+//     content: "React, JavaScript 중심의 웹 개발 경험",
+//     status: "active"
+//   },
+//   {
+//     id: 2,
+//     title: "포트폴리오 이력서",
+//     createdAt: "2024-03-10",
+//     content: "다수의 프로젝트 경험 보유",
+//     status: "active"
+//   },
+//   {
+//     id: 3,
+//     title: "경력 기술서",
+//     createdAt: "2024-03-05",
+//     content: "3년차 웹 개발자 경력 기술",
+//     status: "active"
+//   }
+// ];
 
 
 const JobResumeSubmit = () => {
@@ -36,18 +37,22 @@ const JobResumeSubmit = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const userCode = localStorage.getItem('userCode');
+
   useEffect(() => {
     // API 연동 전 더미데이터 사용
-    setResumes(dummyResumes);
+    // setResumes(dummyResumes);
 
-    /* API 연동 코드 (나중에 사용)
+    //  API 연동 코드 (나중에 사용)
     const fetchResumes = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
         const response = await axios.get('http://localhost:8080/resume/list', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${token}` },
+          params: { userCode }
         });
+        console.log('Fetched resumes:', response.data); // 데이터 확인
         setResumes(response.data);
       } catch (err) {
         setError('이력서 목록을 불러오는데 실패했습니다.');
@@ -56,7 +61,6 @@ const JobResumeSubmit = () => {
       }
     };
     fetchResumes();
-    */
   }, []);
 
   const handleSubmit = async () => {
@@ -65,26 +69,31 @@ const JobResumeSubmit = () => {
       return;
     }
 
-    // API 연동 전 테스트용 알림
-    alert(`선택된 이력서(ID: ${selectedResume})로 지원이 완료되었습니다.`);
-    navigate(`/jobs/${jobCode}`);
-
-    /* API 연동 코드 (나중에 사용)
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:8080/application/submit/${jobCode}`, 
-        { resumeId: selectedResume },
-        { headers: { 'Authorization': `Bearer ${token}` }}
+
+      const response = await axios.post(
+        `http://localhost:8080/apply/applyto/${code}?resumeCode=${selectedResume}`,
+        {}, // 빈 객체를 body로 전송
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
       );
+
+      console.log('API Response:', response); // 디버깅용
       alert('지원이 완료되었습니다.');
-      navigate(`/jobs/${jobCode}`);
+      navigate(`/jobs/${code}`);
     } catch (err) {
+      console.error('API Error:', err); // 디버깅용
       setError('지원에 실패했습니다.');
+      alert('지원에 실패했습니다. 지원 공고 목록으로 이동합니다.');
+      navigate('/jobs');
     } finally {
       setLoading(false);
     }
-    */
   };
 
   if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
@@ -96,19 +105,19 @@ const JobResumeSubmit = () => {
       <ResumeList>
         {resumes.map(resume => (
           <ResumeItem
-            key={resume.id}
-            selected={selectedResume === resume.id}
+            key={resume.resumeCode}
+            selected={selectedResume === resume.resumeCode}
           >
-            <ResumeContent onClick={() => setSelectedResume(resume.id)}>
-              <ResumeTitle>{resume.title}</ResumeTitle>
+            <ResumeContent onClick={() => setSelectedResume(resume.resumeCode)}>
+              <ResumeTitle>{resume.introduce}</ResumeTitle>
               <ResumeDate>
-                작성일: {new Date(resume.createdAt).toLocaleDateString()}
+                작성일: {new Date(resume.createDate).toLocaleDateString()}
               </ResumeDate>
             </ResumeContent>
             <ViewButton
               onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/resume/${resume.id}`);
+                navigate(`/resumes/${resume.resumeCode}`);
               }}
             >
               이력서 보기
@@ -117,15 +126,9 @@ const JobResumeSubmit = () => {
         ))}
       </ResumeList>
       <ButtonGroup>
-        <SubmitButton
-          onClick={handleSubmit}
-          disabled={!selectedResume || loading}
-        >
+        <SubmitButton onClick={handleSubmit} disabled={!selectedResume || loading}>
           지원하기
         </SubmitButton>
-        <CancelButton onClick={() => navigate(`/jobs/${jobCode}`)}>
-          취소
-        </CancelButton>
       </ButtonGroup>
     </Container>
   );

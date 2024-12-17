@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
@@ -26,6 +26,9 @@ const UserMyPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  const userCode = localStorage.getItem('userCode');
+  console.log(userCode);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -232,7 +235,8 @@ const UserMyPage = () => {
             <ResumeSection>
               <ResumeCount>총 {stats.resumes}개의 이력서</ResumeCount>
               <ResumeButton as={Link} to="/resumes/post">새 이력서 등록</ResumeButton>
-              <ResumeButton as={Link} to="/resumes/list">이력서 관리</ResumeButton>
+              <ResumeButton onClick={() => navigate('/resumes/list')}>이력서 관리</ResumeButton>
+
             </ResumeSection>
           </Section>
         )}
