@@ -144,7 +144,8 @@ const Header = () => {
               </SubMenuItem> */}
             </SubMenu>
           </NavItem>
-          {userType === "kakao" || userType === "naver" || userType === "dev" &&(
+
+          {userType !== "company"  &&(
           <NavItem>
             이력서
             <SubMenu>

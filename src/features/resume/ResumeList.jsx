@@ -5,26 +5,6 @@ import axios from 'axios';
 import { format } from 'date-fns';
 import { useSelector } from 'react-redux';
 
-// 가짜데이터 -> API 호출
-// const dummyResumes = [
-//   {
-//     id: 1,
-//     title: "프론트엔드 개발자 이력서",
-//     createdAt: "2024-02-15",
-//     updatedAt: "2024-03-10",
-//     isPublic: true,
-//     category: "개발"
-//   },
-//   {
-//     id: 2,
-//     title: "신입 개발자 이력서",
-//     createdAt: "2024-01-20",
-//     updatedAt: "2024-03-15",
-//     isPublic: false,
-//     category: "개발"
-//   }
-// ];
-
 const formatLocalDateTime = (localDateTime) => {
   if(!localDateTime) return "없음";
   const date = new Date(localDateTime);
@@ -51,6 +31,7 @@ const ResumeList = () => {
         },
       });
       if (response.status === 200) {
+        console.log("API Response Data:", response.data); // 데이터 구조 확인
         setResumes(response.data);
       } else {
         throw new Error(`api error: ${response.status} ${response.statusText}`);
@@ -60,11 +41,39 @@ const ResumeList = () => {
     apicall();
   }, [token, userCode]);
 
-  const handleDelete = (id) => {
-    if (window.confirm('이력서를 삭제하시겠습니까?')) {
-      setResumes(resumes.filter(resume => resume.id !== id));
+  // 삭제 핸들러
+  const handleDelete = async (resumeCode) => {
+    if (!window.confirm('이력서를 삭제하시겠습니까?')) return;
+  
+    try {
+      const response = await axios.delete(`http://localhost:8080/resume/remove/${resumeCode}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+  
+      if (response.status === 204) { // 204 상태 처리
+        console.log(`Deleted successfully, resumeCode: ${resumeCode}`);
+        
+        // 상태 업데이트
+        setResumes((prevResumes) => {
+          const updatedResumes = prevResumes.filter((resume) => resume.resumeCode !== resumeCode);
+          console.log("Updated resumes:", updatedResumes);
+          return updatedResumes;
+        });
+      } else {
+        console.warn("Unexpected response:", response.status);
+      }
+    } catch (error) {
+      console.error("이력서 삭제 실패:", error);
     }
   };
+  
+
+  // 상태 변화 확인
+  useEffect(() => {
+    console.log("Resumes state updated:", resumes);
+  }, [resumes]);
+
+  
 
   return (
     <Container>
@@ -90,7 +99,7 @@ const ResumeList = () => {
               <ActionButton as={Link} to={`/resumes/${resume.resumeCode}`} className="preview">
                 상세
               </ActionButton>
-              <ActionButton onClick={() => handleDelete(resume.id)} className="delete">
+              <ActionButton onClick={() => handleDelete(resume.resumeCode)} className="delete">
                 삭제
               </ActionButton>
             </ButtonGroup>
