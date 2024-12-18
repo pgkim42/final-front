@@ -40,7 +40,7 @@ const JobListPage = () => {
       // setFilteredJobs(reversedData);
       setJobs(jobsWithImage);
       setFilteredJobs(jobsWithImage);
-      
+
     } catch (err) {
       setError(err.message || '채용공고를 불러오는데 실패했습니다.');
       console.error('Error fetching jobs:', err);
@@ -133,13 +133,13 @@ const JobListPage = () => {
           <NoDataWrapper>검색 결과가 없습니다.</NoDataWrapper>
         ) : (
           currentJobs.map(job => (
-            <JobCard key={job.jobCode}>
+            <JobCard key={job.jobCode} disabled={!job.postingStatus}>
               <Link to={`/jobs/${job.jobCode}`}>
-              {job.imageUrl && (
-                <Thumbnail>
-                  <img src={job.imageUrl} alt="공고 이미지" />
-                </Thumbnail>
-              )}
+                {job.imageUrl && (
+                  <Thumbnail>
+                    <img src={job.imageUrl} alt="공고 이미지" />
+                  </Thumbnail>
+                )}
                 <JobInfo>
                   <JobTitle>{job.title}</JobTitle>
                   <Location>{job.address}</Location>
@@ -156,7 +156,12 @@ const JobListPage = () => {
                       <SkillTag key={index}>{skill.trim()}</SkillTag>
                     ))}
                   </SkillTags>
-                  <Deadline>마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}</Deadline>
+                  <Deadline>
+                    마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}
+                  </Deadline>
+                  {!job.postingStatus && (
+                    <div style={{ color: 'red', fontWeight: 'bold' }}>마감된 공고</div>
+                  )}
                 </JobInfo>
               </Link>
             </JobCard>
@@ -247,12 +252,15 @@ const JobGrid = styled.div`
 const JobCard = styled.div`
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   transition: transform 0.2s;
-  
+  opacity: ${(props) => (props.disabled ? 0.8 : 1)}; // 투명도 적용
+  background-color: ${(props) => (props.disabled ? '#D3D3D3' : 'white')}; // 배경색 변경
+  pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')}; // 클릭 비활성화
+
   &:hover {
-    transform: translateY(-4px);
+    transform: ${(props) => (props.disabled ? 'none' : 'translateY(-4px)')};
   }
   
   a {
@@ -260,6 +268,7 @@ const JobCard = styled.div`
     color: inherit;
     display: block;
     padding: 1.5rem;
+    pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')}; // 링크 클릭 비활성화
   }
 `;
 

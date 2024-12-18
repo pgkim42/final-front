@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.bubble.css';
-import PropTypes from 'prop-types';
 import {
   GlobalStyle,
   Container,
@@ -11,6 +9,7 @@ import {
 } from '../../styles/ResumeStyles';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
+import { format } from 'date-fns';
 
 const Section = styled.div`
   margin-bottom: 24px;
@@ -102,86 +101,102 @@ const ResumeRead = () => {
   }
 
   if (!resumeData) {
-    return <Container>No resume found.</Container>;
+    return <Container>이력서를 찾을 수 없습니다.</Container>;
   }
 
   return (
     <Container>
-      <h1>Resume Detail</h1>
+      <Value><h1>{resumeData.work}</h1></Value>
       <Section>
-        <SectionTitle>Introduction</SectionTitle>
+        <SectionTitle>자기소개</SectionTitle>
         <Value>{resumeData.introduce}</Value>
       </Section>
 
       <Section>
-        <SectionTitle>Work</SectionTitle>
-        <Value>{resumeData.work}</Value>
-      </Section>
-
-      <Section>
-        <SectionTitle>Experience</SectionTitle>
+        <SectionTitle>경력</SectionTitle>
         {resumeData.experienceDetail.map((exp, index) => (
           <ItemContainer key={index}>
-            <Value><strong>Company:</strong> {exp.company}</Value>
-            <Value><strong>Department:</strong> {exp.department}</Value>
-            <Value><strong>Position:</strong> {exp.position}</Value>
-            <Value><strong>Responsibility:</strong> {exp.responsibility}</Value>
-            <Value><strong>Salary:</strong> {exp.salary}</Value>
-            <Value><strong>Duration:</strong> {exp.startDate} - {exp.endDate}</Value>
+            <Value><strong>회사:</strong> {exp.company}</Value>
+            <Value><strong>부서:</strong> {exp.department}</Value>
+            <Value><strong>포지션:</strong> {exp.position}</Value>
+            <Value><strong>담당업무:</strong> {exp.responsibility}</Value>
+            <Value><strong>연봉:</strong> {exp.salary}</Value>
+            <Value><strong>재직기간:</strong> {exp.startDate} - {exp.endDate}</Value>
           </ItemContainer>
         ))}
       </Section>
 
       <Section>
-        <SectionTitle>Education</SectionTitle>
+        <SectionTitle>학력</SectionTitle>
         {resumeData.education.map((edu, index) => (
           <ItemContainer key={index}>
-            <Value><strong>School:</strong> {edu.school}</Value>
-            <Value><strong>Major:</strong> {edu.major}</Value>
-            <Value><strong>Date:</strong> {edu.date}</Value>
+            <Value><strong>학교명:</strong> {edu.school}</Value>
+            <Value><strong>전공:</strong> {edu.major}</Value>
+            <Value><strong>날짜:</strong> {edu.date}</Value>
           </ItemContainer>
         ))}
       </Section>
 
       <Section>
-        <SectionTitle>Certifications</SectionTitle>
+        <SectionTitle>자격증</SectionTitle>
         {resumeData.certifications.map((cert, index) => (
           <ItemContainer key={index}>
-            <Value><strong>Name:</strong> {cert.certificationName}</Value>
-            <Value><strong>Issued Date:</strong> {cert.issueDate}</Value>
-            <Value><strong>Issuer:</strong> {cert.issuer}</Value>
+            <Value><strong>자격증명:</strong> {cert.certificationName}</Value>
+            <Value><strong>발급일:</strong> {cert.issueDate}</Value>
+            <Value><strong>발급기관:</strong> {cert.issuer}</Value>
           </ItemContainer>
         ))}
       </Section>
 
       <Section>
-        <SectionTitle>Language Skills</SectionTitle>
+        <SectionTitle>언어</SectionTitle>
         {resumeData.languageSkills.map((lang, index) => (
           <ItemContainer key={index}>
-            <Value><strong>Language:</strong> {lang.language}</Value>
-            <Value><strong>Level:</strong> {lang.level}</Value>
+            <Value><strong>언어:</strong> {lang.language}</Value>
+            <Value><strong>수준:</strong> {lang.level}</Value>
           </ItemContainer>
         ))}
       </Section>
 
       <Section>
-        <SectionTitle>Skills</SectionTitle>
+        <SectionTitle>기술</SectionTitle>
         <Value>{resumeData.skill}</Value>
       </Section>
 
       <Section>
-        <SectionTitle>Job Category</SectionTitle>
+        <SectionTitle>직무</SectionTitle>
         <Value>{resumeData.jobCategory}</Value>
       </Section>
 
       <Section>
-        <SectionTitle>Last Updated</SectionTitle>
-        <Value>{new Date(resumeData.updateDate).toLocaleString()}</Value>
+        <SectionTitle>이력서</SectionTitle>
+        <Value>
+          {resumeData.uploadFileName ? (
+            <>
+              현재 첨부된 이력서:{" "}
+              <a
+                href={resumeData.uploadFileName}
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                {resumeData.uploadFileName.split('/').pop() || "다운로드"}
+              </a>
+            </>
+          ) : (
+            "이력서가 첨부되지 않았습니다."
+          )}
+
+        </Value>
       </Section>
 
       <Section>
-        <SectionTitle>Uploaded File</SectionTitle>
-        <Value>{resumeData.uploadFileName || 'No file uploaded.'}</Value>
+        <SectionTitle>마지막 수정일</SectionTitle>
+        <Value>
+          {resumeData.updateDate && !isNaN(new Date(resumeData.updateDate))
+            ? format(new Date(resumeData.updateDate), 'yyyy-MM-dd')
+            : "수정일이 없습니다."}
+        </Value>
       </Section>
     </Container>
   );
