@@ -1,35 +1,56 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import styled from "styled-components";
 import AdminLayout from "./AdminLayout";
 
 const AdminMember = () => {
-
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const token = localStorage.getItem('token');
 
-  const [users, setUsers] = useState([
-    { id: 1, name: "김사용", email: "user1@mail.com", type: "구직자" },
-    { id: 2, name: "이기업", email: "company1@mail.com", type: "기업회원" },
-    { id: 3, name: "박지원", email: "user2@mail.com", type: "구직자" },
-    { id: 4, name: "최기업", email: "company2@mail.com", type: "기업회원" },
-    { id: 5, name: "정민수", email: "user3@mail.com", type: "구직자" },
-    { id: 6, name: "한상우", email: "user4@mail.com", type: "구직자" },
-    { id: 7, name: "이서연", email: "user5@mail.com", type: "구직자" },
-    { id: 8, name: "강기업", email: "company3@mail.com", type: "기업회원" },
-    { id: 9, name: "윤지혜", email: "user6@mail.com", type: "구직자" },
-    { id: 10, name: "송민재", email: "user7@mail.com", type: "구직자" },
-    { id: 11, name: "오기업", email: "company4@mail.com", type: "기업회원" },
-    { id: 12, name: "임현우", email: "user8@mail.com", type: "구직자" },
-    { id: 13, name: "장미경", email: "user9@mail.com", type: "구직자" },
-    { id: 14, name: "백승호", email: "company5@mail.com", type: "기업회원" },
-    { id: 15, name: "황민지", email: "user10@mail.com", type: "구직자" }
-  ]);
+  const ROLE_MAPPING = {
+    'ROLE_ADMIN': '관리자',
+    'ROLE_COMPANY': '기업회원',
+    'ROLE_USER': '개인회원'
+  }
 
-  const handleWithdrawUser = (id, name) => {
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/v1/users', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+        setError('Failed to load users data');
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [token]);
+
+  const handleWithdrawUser = async (userId, name) => {
     if (window.confirm(`'${name}' 회원을 강제 탈퇴시키겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
-      setUsers(users.filter(user => user.id !== id));
+      try {
+        await axios.delete(`http://localhost:8080/api/v1/users/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(users.filter(user => user.userId !== userId));
+      } catch (err) {
+        console.error('Failed to delete user:', err);
+        alert('회원 탈퇴 처리에 실패했습니다.');
+      }
     }
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   const indexOfLastUser = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstUser = indexOfLastUser - ITEMS_PER_PAGE;
@@ -55,12 +76,16 @@ const AdminMember = () => {
                 <Td>{user.name}</Td>
                 <Td>{user.email}</Td>
                 <Td>
-                  <UserType type={user.type}>{user.type}</UserType>
+                  <UserRole type={user.role}>
+                    {ROLE_MAPPING[user.role] || user.role}
+                  </UserRole>
                 </Td>
                 <Td>
-                  <DeleteButton onClick={() => handleWithdrawUser(user.id, user.name)}>
-                    강제탈퇴
-                  </DeleteButton>
+                  {user.role !== 'ROLE_ADMIN' && (
+                    <DeleteButton onClick={() => handleWithdrawUser(user.id, user.name)}>
+                      강제탈퇴
+                    </DeleteButton>
+                  )}
                 </Td>
               </Tr>
             ))}
@@ -120,24 +145,6 @@ const Tr = styled.tr`
   }
 `;
 
-const UserType = styled.span`
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  
-  ${props => props.type === "구직자"
-    ? `
-      background-color: #e6fffa;
-      color: #047857;
-    `
-    : `
-      background-color: #ede9fe;
-      color: #6d28d9;
-    `
-  }
-`;
-
 const DeleteButton = styled.button`
   background: #dc2626;
   color: white;
@@ -169,6 +176,26 @@ const PageButton = styled.button`
   &:hover {
     background: ${props => props.active ? '#2563eb' : '#cbd5e1'};
   }
+`;
+
+const UserRole = styled.span`
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  ${props => {
+    switch (props.type) {
+      case 'ROLE_ADMIN':
+        return 'background: #e3f2fd; color: #1565c0;';
+      case 'ROLE_COMPANY':
+        return 'background: #e8f5e9; color: #2e7d32;';
+      case 'ROLE_USER':
+        return 'background: #fff3e0; color: #ef6c00;';
+      default:
+        return 'background: #f5f5f5; color: #666666;';
+    }
+  }}
 `;
 
 export default AdminMember;

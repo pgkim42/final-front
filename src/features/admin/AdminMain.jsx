@@ -1,239 +1,253 @@
-// AdminMain.jsx
-import { useState } from 'react';
-import styled from 'styled-components';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import AdminLayout from './AdminLayout';
 import {
-  PieChart, Pie, BarChart, Bar, XAxis, YAxis,
-  CartesianGrid, Tooltip, Legend, Cell
+  PieChart, Pie, Cell, Tooltip, Legend
 } from 'recharts';
+import styled from 'styled-components';
+
+const ROLE_MAPPING = {
+  'ROLE_ADMIN': '관리자',
+  'ROLE_COMPANY': '기업회원',
+  'ROLE_USER': '일반회원'
+};
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
+
+const STATUS_MAPPING = {
+  true: '활성',
+  false: '마감'
+};
+
+const JOB_COLORS = ['#4CAF50', '#F44336'];
 
 const AdminMain = () => {
+  const [users, setUsers] = useState([]);
+  const [jobPostings, setJobPostings] = useState([]);
+  const [userCount, setUserCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const token = localStorage.getItem('token');
 
-  // Dummy data
-  const [jobPostings] = useState([
-    { id: 1, title: "프론트엔드 개발자", company: "테크컴퍼니", status: "모집중" },
-    { id: 2, title: "백엔드 개발자", company: "IT기업", status: "마감" },
-    { id: 3, title: "데이터 엔지니어", company: "데이터컴퍼니", status: "모집중" },
-    { id: 4, title: "시스템 관리자", company: "시스템솔루션", status: "모집중" },
-    { id: 5, title: "DevOps 엔지니어", company: "클라우드테크", status: "마감" },
-    { id: 6, title: "웹 디자이너", company: "디자인스튜디오", status: "모집중" },
-    { id: 7, title: "Java 개발자", company: "소프트웨어하우스", status: "모집중" },
-    { id: 8, title: "QA 엔지니어", company: "퀄리티테크", status: "마감" },
-    { id: 9, title: "보안 전문가", company: "시큐리티프로", status: "모집중" },
-    { id: 10, title: "모바일 개발자", company: "앱스튜디오", status: "모집중" },
-    { id: 11, title: "UI/UX 디자이너", company: "사용자경험랩", status: "마감" },
-    { id: 12, title: "Python 개발자", company: "AI솔루션즈", status: "모집중" },
-    { id: 13, title: "프로덕트 매니저", company: "프로덕트컴퍼니", status: "모집중" },
-    { id: 14, title: "네트워크 엔지니어", company: "네트워크테크", status: "마감" },
-    { id: 15, title: "클라우드 아키텍트", company: "클라우드서비스", status: "모집중" },
-    { id: 16, title: "데이터 사이언티스트", company: "데이터랩스", status: "모집중" },
-    { id: 17, title: "블록체인 개발자", company: "블록테크놀로지", status: "마감" }
-  ]);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/v1/users', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsers(response.data);
+        setUserCount(response.data.length);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch users:', err);
+        setError('Failed to load users data');
+        setLoading(false);
+      }
+    };
+    fetchUsers();
+  }, [token]);
 
-  const [users] = useState([
-    { id: 1, name: "김사용", email: "user1@mail.com", type: "구직자" },
-    { id: 2, name: "이기업", email: "company1@mail.com", type: "기업회원" },
-    { id: 3, name: "박지원", email: "user2@mail.com", type: "구직자" },
-    { id: 4, name: "최기업", email: "company2@mail.com", type: "기업회원" },
-    { id: 5, name: "정민수", email: "user3@mail.com", type: "구직자" },
-    { id: 6, name: "한상우", email: "user4@mail.com", type: "구직자" },
-    { id: 7, name: "이서연", email: "user5@mail.com", type: "구직자" },
-    { id: 8, name: "강기업", email: "company3@mail.com", type: "기업회원" },
-    { id: 9, name: "윤지혜", email: "user6@mail.com", type: "구직자" },
-    { id: 10, name: "송민재", email: "user7@mail.com", type: "구직자" },
-    { id: 11, name: "오기업", email: "company4@mail.com", type: "기업회원" },
-    { id: 12, name: "임현우", email: "user8@mail.com", type: "구직자" },
-    { id: 13, name: "장미경", email: "user9@mail.com", type: "구직자" },
-    { id: 14, name: "백승호", email: "company5@mail.com", type: "기업회원" },
-    { id: 15, name: "황민지", email: "user10@mail.com", type: "구직자" }
-  ]);
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/jobposting/list', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Jobs data:', response.data);
+        setJobPostings(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch jobs:', err);
+        setError('Failed to load jobs data');
+        setLoading(false);
+      }
+    };
 
+    fetchJobs();
+  }, [token]);
 
-  // 통계 데이터 준비
-  const stats = {
-    users: {
-      total: users.length,
-      jobSeeker: users.filter(u => u.type === "구직자").length,
-      company: users.filter(u => u.type === "기업회원").length
-    },
-    jobs: {
-      total: jobPostings.length,
-      active: jobPostings.filter(j => j.status === "모집중").length,
-      closed: jobPostings.filter(j => j.status === "마감").length
-    }
-  };
-
-  const userTypeData = [
-    { name: '구직자', value: stats.users.jobSeeker },
-    { name: '기업회원', value: stats.users.company }
+  const userChartData = [
+    { name: '기업회원', value: users.filter(user => user.role === 'ROLE_COMPANY').length },
+    { name: '일반회원', value: users.filter(user => user.role === 'ROLE_USER').length },
+    { name: '관리자', value: users.filter(user => user.role === 'ROLE_ADMIN').length }
   ];
 
-  const jobStatusData = [
-    { name: '모집중', value: stats.jobs.active },
-    { name: '마감', value: stats.jobs.closed }
+  const jobChartData = [
+    { name: '활성 공고', value: jobPostings.filter(job => job.postingStatus === true).length },
+    { name: '마감 공고', value: jobPostings.filter(job => job.postingStatus === false).length }
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
-
-  const closedPostings = jobPostings.filter(post => post.status === "마감").length;
-  const activePostings = jobPostings.filter(post => post.status === "모집중").length;
-  const companyUsers = users.filter(user => user.type === "기업회원").length;
-  const jobSeekers = users.filter(user => user.type === "구직자").length;
+  if (loading) return <LoadingText>로딩중...</LoadingText>;
+  if (error) return <ErrorText>{error}</ErrorText>;
 
   return (
     <AdminLayout>
-      <Container>
-        <DashboardSection>
-          <h2>전체 현황</h2>
-          <StatContainer>
-            <StatsSection>
-              <ChartContainer>
-                <ChartTitle>회원 구분</ChartTitle>
-                <PieChart width={400} height={300}>
-                  <Pie
-                    data={userTypeData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {userTypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ChartContainer>
+      <DashboardContainer>
+        <StatSection>
+          <StatCard>
+            <StatTitle>전체 회원수</StatTitle>
+            <StatNumber>{userCount}명</StatNumber>
+          </StatCard>
 
-              <ChartContainer>
-                <ChartTitle>채용공고 현황</ChartTitle>
-                <BarChart width={400} height={300} data={jobStatusData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="value" fill="#8884d8" />
-                </BarChart>
-              </ChartContainer>
-            </StatsSection>
+          <StatCard>
+            <StatTitle>전체 채용공고</StatTitle>
+            <StatNumber>{jobPostings.length}개</StatNumber>
+          </StatCard>
+        </StatSection>
 
-            <StatSection>
-              <h3>공고 현황</h3>
-              <StatRow>
-                <StatBox>
-                  <h4>전체 공고</h4>
-                  <span>{jobPostings.length}</span>
-                </StatBox>
-                <StatBox>
-                  <h4>진행중인 공고</h4>
-                  <span>{activePostings}</span>
-                </StatBox>
-                <StatBox>
-                  <h4>마감된 공고</h4>
-                  <span>{closedPostings}</span>
-                </StatBox>
-              </StatRow>
-            </StatSection>
+        <ChartSection>
+          <ChartCard>
+            <StatTitle>회원 구성</StatTitle>
+            <PieChart width={400} height={300}>
+              <Pie
+                data={userChartData}
+                cx={200}
+                cy={150}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, value }) => `${name}: ${value}명`}
+              >
+                {userChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartCard>
 
-            <StatSection>
-              <h3>회원 현황</h3>
-              <StatRow>
-                <StatBox>
-                  <h4>기업회원</h4>
-                  <span>{companyUsers}</span>
-                </StatBox>
-                <StatBox>
-                  <h4>구직자회원</h4>
-                  <span>{jobSeekers}</span>
-                </StatBox>
-              </StatRow>
-            </StatSection>
-          </StatContainer>
-        </DashboardSection>
-      </Container>
-    </AdminLayout>
+          <ChartCard>
+            <StatTitle>채용공고 현황</StatTitle>
+            <PieChart width={400} height={300}>
+              <Pie
+                data={jobChartData}
+                cx={200}
+                cy={150}
+                outerRadius={100}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, value }) => `${name}: ${value}개`}
+              >
+                {jobChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={JOB_COLORS[index % JOB_COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ChartCard>
+        </ChartSection>
+
+        <UserListCard>
+          <StatTitle>최근 가입 회원</StatTitle>
+          <UserList>
+            {users.slice(0, 5).map(user => (
+              <UserItem key={user.userId}>
+                <UserName>{user.name}</UserName>
+                <UserEmail>{user.email}</UserEmail>
+                <UserRole>{ROLE_MAPPING[user.role]}</UserRole>
+              </UserItem>
+            ))}
+          </UserList>
+        </UserListCard>
+      </DashboardContainer>
+    </AdminLayout >
   );
 };
 
-const Container = styled.div`
-      padding: 2rem;
-      max-width: 1200px;
-      margin: 0 auto;
-      `;
-
-const Section = styled.section`
-      margin: 2rem 0;
-      background: white;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      `;
-
-const DashboardSection = styled(Section)`
-      background: #f8f9fa;
-      `;
-
-const StatContainer = styled.div`
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-      `;
+const DashboardContainer = styled.div`
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+`;
 
 const StatSection = styled.div`
-      h3 {
-        margin - bottom: 1rem;
-      color: #333;
-  }
-      `;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+`;
 
-const StatRow = styled.div`
-      display: flex;
-      gap: 1rem;
-      `;
+const StatCard = styled.div`
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+`;
 
-const StatBox = styled.div`
-      flex: 1;
-      padding: 1.5rem;
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+const ChartCard = styled(StatCard)`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
 
-      h4 {
-        margin: 0;
-      color: #666;
-  }
+const UserListCard = styled(StatCard)`
+  margin-top: 2rem;
+`;
 
-      span {
-        display: block;
-      margin-top: 0.5rem;
-      font-size: 1.8rem;
-      font-weight: bold;
-      color: #2563eb;
-  }
-      `;
+const StatTitle = styled.h3`
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+`;
 
-const StatsSection = styled.div`
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 2rem;
-      `;
+const StatNumber = styled.div`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1976d2;
+`;
 
-const ChartContainer = styled.div`
-      text-align: center;
-      `;
+const UserList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
 
-const ChartTitle = styled.h3`
-      margin-bottom: 1rem;
-      color: #2c3e50;
-      `;
+const UserItem = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+`;
+
+const UserName = styled.span`
+  font-weight: bold;
+`;
+
+const UserEmail = styled.span`
+  color: #666;
+`;
+
+const UserRole = styled.span`
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: #e3f2fd;
+  color: #1565c0;
+  font-size: 0.875rem;
+`;
+
+const LoadingText = styled.div`
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+`;
+
+const ErrorText = styled.div`
+  text-align: center;
+  padding: 2rem;
+  color: #c62828;
+  font-size: 1.2rem;
+`;
+
+const ChartSection = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-bottom: 2rem;
+`;
 
 export default AdminMain;
