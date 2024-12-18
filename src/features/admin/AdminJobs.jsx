@@ -1,52 +1,97 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import AdminLayout from './AdminLayout';
+import axios from 'axios';
 
 const AdminJobs = () => {
-  const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const token = localStorage.getItem('token');
+  const [jobPostings, setJobPostings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const STATUS_MAPPING = {
+    true: '활성',
+    false: '마감',
+  };
 
-  // 임시 데이터
-  const [jobPostings, setJobPostings] = useState([
-    { id: 1, title: "프론트엔드 개발자", company: "테크컴퍼니", status: "모집중" },
-    { id: 2, title: "백엔드 개발자", company: "IT기업", status: "마감" },
-    { id: 3, title: "데이터 엔지니어", company: "데이터컴퍼니", status: "모집중" },
-    { id: 4, title: "시스템 관리자", company: "시스템솔루션", status: "모집중" },
-    { id: 5, title: "DevOps 엔지니어", company: "클라우드테크", status: "마감" },
-    { id: 6, title: "웹 디자이너", company: "디자인스튜디오", status: "모집중" },
-    { id: 7, title: "Java 개발자", company: "소프트웨어하우스", status: "모집중" },
-    { id: 8, title: "QA 엔지니어", company: "퀄리티테크", status: "마감" },
-    { id: 9, title: "보안 전문가", company: "시큐리티프로", status: "모집중" },
-    { id: 10, title: "모바일 개발자", company: "앱스튜디오", status: "모집중" },
-    { id: 11, title: "UI/UX 디자이너", company: "사용자경험랩", status: "마감" },
-    { id: 12, title: "Python 개발자", company: "AI솔루션즈", status: "모집중" },
-    { id: 13, title: "프로덕트 매니저", company: "프로덕트컴퍼니", status: "모집중" },
-    { id: 14, title: "네트워크 엔지니어", company: "네트워크테크", status: "마감" },
-    { id: 15, title: "클라우드 아키텍트", company: "클라우드서비스", status: "모집중" },
-    { id: 16, title: "데이터 사이언티스트", company: "데이터랩스", status: "모집중" },
-    { id: 17, title: "블록체인 개발자", company: "블록테크놀로지", status: "마감" }
-  ]);
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/jobposting/list', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        console.log('Jobs data:', response.data);
+        setJobPostings(response.data);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch jobs:', err);
+        setError('Failed to load jobs data');
+        setLoading(false);
+      }
+    };
 
-  const handleDeletePosting = (id, title) => {
+    fetchJobs();
+  }, [token]);
+
+  const handleDeletePosting = async (id, title) => {
     if (window.confirm(`'${title}' 공고를 삭제하시겠습니까?`)) {
-      setJobPostings(jobPostings.filter(job => job.id !== id));
+      try {
+        await axios.delete(`http://localhost:8080/jobposting/remove/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setJobPostings(jobPostings.filter(job => job.jobCode !== id));
+      } catch (err) {
+        console.error('Failed to delete job posting:', err);
+        alert('공고 삭제에 실패했습니다.');
+      }
     }
   };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>{error}</div>;
 
   const handleView = (id) => {
     window.location.href = `/jobs/${id}`;
   };
 
-  // 페이지네이션 로직
+  const filteredJobs = jobPostings.filter(job => {
+    if (selectedStatus === 'all') return true;
+    return job.postingStatus === (selectedStatus === 'active');
+  });
+
   const indexOfLastJob = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstJob = indexOfLastJob - ITEMS_PER_PAGE;
-  const currentJobs = jobPostings.slice(indexOfFirstJob, indexOfLastJob);
-  const totalPages = Math.ceil(jobPostings.length / ITEMS_PER_PAGE);
+  const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+  const totalPages = Math.ceil(filteredJobs.length / ITEMS_PER_PAGE);
 
   return (
     <AdminLayout>
       <Container>
-        <Title>채용공고 관리</Title>
+        <Header>
+          <Title>채용공고 관리</Title>
+          <FilterGroup>
+            <FilterButton
+              active={selectedStatus === 'all'}
+              onClick={() => setSelectedStatus('all')}
+            >
+              전체
+            </FilterButton>
+            <FilterButton
+              active={selectedStatus === 'active'}
+              onClick={() => setSelectedStatus('active')}
+            >
+              활성
+            </FilterButton>
+            <FilterButton
+              active={selectedStatus === 'closed'}
+              onClick={() => setSelectedStatus('closed')}
+            >
+              마감
+            </FilterButton>
+          </FilterGroup>
+        </Header>
         <Table>
           <thead>
             <tr>
@@ -60,14 +105,16 @@ const AdminJobs = () => {
             {currentJobs.map(job => (
               <Tr key={job.id}>
                 <Td>{job.title}</Td>
-                <Td>{job.company}</Td>
+                <Td>{job.profile.companyName}</Td>
                 <Td>
-                  <Status status={job.status}>{job.status}</Status>
+                  <Status status={job.postingStatus}>
+                    {STATUS_MAPPING[job.postingStatus]}
+                  </Status>
                 </Td>
                 <Td>
                   <ButtonGroup>
-                    <ActionButton onClick={() => handleView(job.id)}>조회</ActionButton>
-                    <ActionButton danger onClick={() => handleDeletePosting(job.id, job.title)}>
+                    <ActionButton onClick={() => handleView(job.jobCode)}>조회</ActionButton>
+                    <ActionButton danger onClick={() => handleDeletePosting(job.jobCode, job.title)}>
                       삭제
                     </ActionButton>
                   </ButtonGroup>
@@ -119,7 +166,7 @@ border-bottom: 1px solid #e2e8f0;
 
 const Tr = styled.tr`
 &:hover {
-  background - color: #f8fafc;
+  background-color: #f8fafc;
 }
 `;
 
@@ -130,20 +177,43 @@ const Title = styled.h2`
       `;
 
 const Status = styled.span`
-padding: 0.25rem 0.75rem;
-border-radius: 9999px;
-font-size: 0.875rem;
-font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  
+  ${props => {
+    if (props.status) {
+      return 'background: #e8f5e9; color: #2e7d32;'; // 활성 - 초록색
+    } else {
+      return 'background: #ffebee; color: #c62828;'; // 마감 - 빨간색
+    }
+  }}
+`;
 
-${props => props.status === "모집중"
-    ? `
-background-color: #e6fffa;
-color: #047857;
-`
-    : `
-background-color: #fee2e2;
-color: #dc2626;
-`
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+`;
+
+const FilterGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+`;
+
+const FilterButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: ${props => props.active ? '#1976d2' : '#f5f5f5'};
+  color: ${props => props.active ? 'white' : '#666'};
+  font-weight: 500;
+  
+  &:hover {
+    background-color: ${props => props.active ? '#1565c0' : '#e0e0e0'};
   }
 `;
 
