@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
+import { format } from 'date-fns';
+
 
 const CompanyApplicantList = () => {
   const { jobId } = useParams();
@@ -26,31 +28,6 @@ const CompanyApplicantList = () => {
       ));
     }
   };
-
-  // 더미 데이터
-  useEffect(() => {
-    const dummyApplicants = [
-      {
-        id: 1,
-        name: "김지원",
-        email: "kim@test.com",
-        phone: "010-1234-5678",
-        status: "검토중",
-        appliedDate: "2024-02-20",
-        resumeUrl: "/resume/1"
-      },
-      {
-        id: 2,
-        name: "이지원",
-        email: "lee@test.com",
-        phone: "010-2345-6789",
-        status: "합격",
-        appliedDate: "2024-02-21",
-        resumeUrl: "/resume/2"
-      }
-    ];
-    setApplicants(dummyApplicants);
-  }, [jobId]);
 
   const filteredApplicants = filter === 'all'
     ? applicants
@@ -81,7 +58,7 @@ const CompanyApplicantList = () => {
                 <StatusBadge status={applicant.status}>{applicant.status}</StatusBadge>
               </ApplicantHeader>
               <ApplicantInfo>
-                <p>지원일: {applicant.appliedDate}</p>
+              <p>지원일: {applicant.submissionDate ? format(new Date(applicant.submissionDate), 'yyyy년 MM월 dd일') : '날짜 정보 없음'}</p>
               </ApplicantInfo>
               <ButtonGroup>
                 <ViewButton onClick={() => window.open(applicant.resumeUrl)}>
