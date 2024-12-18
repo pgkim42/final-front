@@ -15,8 +15,8 @@ const errorHandler = (error:any) => {
   return responseBody;
 }
 
-const DOMAIN = 'http://localhost:8080';
-const DOMAIN_AWS = 'http://13.125.68.182:8080'; // your aws address
+// const DOMAIN = 'http://localhost:8080';
+const DOMAIN = 'http://13.125.68.182:8080'; // your aws address
 const API_DOMAIN = `${DOMAIN}/api/v1`;
 
 export const SNS_SIGN_IN_URL = (type: 'kakao' | 'naver') => `${API_DOMAIN}/auth/oauth2/${type}`;
