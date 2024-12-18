@@ -1,19 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line
 } from 'recharts';
+import axios from 'axios';
 
 const CompanyDashboard = () => {
-  // 임시 데이터
-  const [stats] = useState({
-    totalApplications: 158,
-    activeJobs: 5,
-    interviewScheduled: 12,
-    hiredCandidates: 3
-  });
-
   const applicationData = [
     { date: '3/1', count: 12 },
     { date: '3/2', count: 15 },
@@ -28,6 +21,106 @@ const CompanyDashboard = () => {
     { name: 'DevOps 엔지니어', applications: 25 }
   ];
 
+  const [jobs, setJobs] = useState([]);
+  const [filter, setFilter] = useState('all');
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [comStats, setComStats] = useState({
+    totalComApplications: 0,
+    ongoingComApplications: 0,
+    finalCompletedApplications: 0,
+  });
+
+  useEffect(() => {
+    const userCode = localStorage.getItem("userCode");
+    const token = localStorage.getItem("token"); // JWT 토큰 가져오기
+
+    if (userCode && token) {
+      axios
+        .get(`http://localhost:8080/apply/applications/count`, {
+          params: { userCode },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((response) => {
+          setComStats((prevStats) => ({
+            ...prevStats,
+            totalComApplications: response.data.totalComApplications,
+            ongoingComApplications: response.data.ongoingComApplications,
+            finalCompletedApplications: response.data.finalApplications,
+          }));
+        })
+        .catch((error) => {
+          console.error("Error fetching application count:", error);
+        });
+
+
+    } else {
+      console.error("Missing userCode or token in localStorage");
+    }
+  }, []);
+
+  useEffect(() => {
+    // 필터링 로직 추가
+    const updatedJobs = jobs.filter(job => {
+      if (filter === 'all') return true;
+      if (filter === '진행중') return job.postingStatus === true;
+      if (filter === '마감') return job.postingStatus === false;
+      return true;
+    });
+
+    setFilteredJobs(updatedJobs);
+  }, [filter, jobs]);
+
+
+  // 진행중인 공고 카운트
+  useEffect(() => {
+    fetchJob();
+  }, []);
+
+  const fetchJob = async () => {
+    const token = localStorage.getItem('token'); // 로컬 스토리지에서 토큰 가져오기
+    const userCode = localStorage.getItem('userCode');
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Authorization 헤더 추가
+      const response = await axios.get("http://localhost:8080/companyprofile/by-company", {
+        headers: {
+          Authorization: `Bearer ${token}` // Bearer 토큰 추가
+        },
+        params: {
+          userCode: userCode // Query Parameter 추가
+        }
+      });      
+
+      if (!response.data) throw new Error('데이터가 없습니다.');
+
+      const responseData = response.data;
+
+      const jobMap = responseData.map(job => ({
+        ...job,
+      }));
+
+      setJobs(jobMap);
+
+    } catch (err) {
+      setError(err.message || '채용공고를 불러오는데 실패했습니다.');
+      console.error('Error fetching jobs:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const stats = {
+    total: jobs.length, // 전체 공고 개수
+    active: jobs.filter(job => job.postingStatus === true).length, // 진행중 공고 개수
+    closed: jobs.filter(job => job.postingStatus === false).length // 마감 공고 개수
+  };
+
+
   return (
     <CompanyLayout>
       <Container>
@@ -35,20 +128,20 @@ const CompanyDashboard = () => {
 
         <StatsGrid>
           <StatCard>
-            <StatLabel>총 지원자</StatLabel>
-            <StatValue>{stats.totalApplications}</StatValue>
-          </StatCard>
-          <StatCard>
             <StatLabel>진행중인 공고</StatLabel>
-            <StatValue>{stats.activeJobs}</StatValue>
+            <StatValue>{stats.active}</StatValue>
           </StatCard>
           <StatCard>
-            <StatLabel>면접 예정</StatLabel>
-            <StatValue>{stats.interviewScheduled}</StatValue>
+            <StatLabel>총 지원자</StatLabel>
+            <StatValue>{comStats.totalComApplications}</StatValue>
+          </StatCard>
+          <StatCard>
+            <StatLabel>채용 진행중</StatLabel>
+            <StatValue>{comStats.ongoingComApplications}</StatValue>
           </StatCard>
           <StatCard>
             <StatLabel>채용 완료</StatLabel>
-            <StatValue>{stats.hiredCandidates}</StatValue>
+            <StatValue>{comStats.finalCompletedApplications}</StatValue>
           </StatCard>
         </StatsGrid>
 
