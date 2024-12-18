@@ -43,7 +43,7 @@ const Home = () => {
   const [jobListings, setJobListings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const ITEM_PER_PAGE = 50; // 페이지당 표시할 아이템 수
+  const ITEM_PER_PAGE = 8; // 페이지당 표시할 아이템 수
 
   const fetchJobListings = async () => {
     try {
