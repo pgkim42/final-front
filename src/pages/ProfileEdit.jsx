@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContent';
+import { useApiHost } from '../context/ApiHostContext';
 
 const passwordPattern = /^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{8,13}$/;
 
@@ -16,6 +17,7 @@ const ProfileEdit = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const { API_HOST } = useApiHost();
 
   const navigate = useNavigate();
   const { cancelAccount } = useAuth();
@@ -50,7 +52,7 @@ const ProfileEdit = () => {
           return;
         }
 
-        const response = await fetch("http://localhost:8080/api/v1/change-password", {
+        const response = await fetch(`${API_HOST}/api/v1/change-password`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

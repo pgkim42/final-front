@@ -21,10 +21,13 @@ import {
   DevWrapper,
   QuillWrapper,
 } from "../../styles/ResumeStyles";
+import { useApiHost } from '../../context/ApiHostContext';
 
 const name = localStorage.getItem("name"); // 로컬 스토리지에 name이 없으면 null 또는 undefined가 반환
 
 const ResumePosting = ({ onSubmit }) => {
+
+  const { API_HOST } = useApiHost();
 
   const navigate = useNavigate();
 
@@ -95,7 +98,7 @@ const ResumePosting = ({ onSubmit }) => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/resume/register",
+        `${API_HOST}/resume/register`,
         formData,
         {
           headers: {

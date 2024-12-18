@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import CompanyLayout from './CompanyLayout';
-import { format } from 'date-fns';
-
+import { format, parseISO } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const CompanyApplicantList = () => {
   const { jobId } = useParams();
   const [applicants, setApplicants] = useState([]);
   const [filter, setFilter] = useState('all');
+  const { API_HOST } = useApiHost();
 
   const handleStatusChange = (applicantId, newStatus) => {
     let message;
@@ -28,6 +30,21 @@ const CompanyApplicantList = () => {
       ));
     }
   };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '날짜 없음';
+    try {
+      const date = parseISO(dateString); // ISO 8601 형식을 안전하게 파싱
+      return format(date, 'yyyy년 MM월 dd일', { locale: ko });
+    } catch (error) {
+      console.error('날짜 변환 오류:', error);
+      return '날짜 오류';
+    }
+  };
+
+  useEffect(() => {
+    console.log('현재 applicants:', applicants); // 디버깅
+  }, [applicants]);
 
   const filteredApplicants = filter === 'all'
     ? applicants
@@ -58,7 +75,7 @@ const CompanyApplicantList = () => {
                 <StatusBadge status={applicant.status}>{applicant.status}</StatusBadge>
               </ApplicantHeader>
               <ApplicantInfo>
-              <p>지원일: {applicant.submissionDate ? format(new Date(applicant.submissionDate), 'yyyy년 MM월 dd일') : '날짜 정보 없음'}</p>
+                <p>지원일: {formatDate(applicant.submissionDate)}</p>
               </ApplicantInfo>
               <ButtonGroup>
                 <ViewButton onClick={() => window.open(applicant.resumeUrl)}>

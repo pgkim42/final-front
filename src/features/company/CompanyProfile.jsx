@@ -4,12 +4,15 @@ import CompanyLayout from './CompanyLayout';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../pages/AuthContent';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const MAX_FILE_SIZE_MB = 10; // 최대 파일 크기 10MB
 
 const CompanyProfile = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
+
+  const { API_HOST } = useApiHost();
 
   const [companyInfo, setCompanyInfo] = useState({
     name: "",
@@ -37,7 +40,7 @@ const CompanyProfile = () => {
         setIsLoading(true);
         setError(null);
 
-        const profileCodeResponse = await axios.get("http://localhost:8080/companyprofile/current", {
+        const profileCodeResponse = await axios.get(`${API_HOST}/companyprofile/current`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Profile code response:", profileCodeResponse);
@@ -45,7 +48,7 @@ const CompanyProfile = () => {
         const profileCode = profileCodeResponse.data;
         setCompanyProfileCode(profileCode); // 회사 프로필 코드 저장
 
-        const response = await axios.get(`http://localhost:8080/companyprofile/read/${profileCode}`, {
+        const response = await axios.get(`${API_HOST}/companyprofile/read/${profileCode}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Company profile data:", response);

@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import AdminLayout from './AdminLayout';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const AdminJobs = () => {
   const ITEMS_PER_PAGE = 10;
   const token = localStorage.getItem('token');
+  const { API_HOST } = useApiHost();
   const [jobPostings, setJobPostings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStatus, setSelectedStatus] = useState('all');
+
   const STATUS_MAPPING = {
     true: '활성',
     false: '마감',
@@ -19,7 +22,7 @@ const AdminJobs = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/jobposting/list', {
+        const response = await axios.get(`${API_HOST}/jobposting/list`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('Jobs data:', response.data);
@@ -38,7 +41,7 @@ const AdminJobs = () => {
   const handleDeletePosting = async (id, title) => {
     if (window.confirm(`'${title}' 공고를 삭제하시겠습니까?`)) {
       try {
-        await axios.delete(`http://localhost:8080/jobposting/remove/${id}`, {
+        await axios.delete(`${API_HOST}/jobposting/remove/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setJobPostings(jobPostings.filter(job => job.jobCode !== id));

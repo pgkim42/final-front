@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import styled from "styled-components";
 import AdminLayout from "./AdminLayout";
+import { useApiHost } from '../../context/ApiHostContext';
 
 const AdminMember = () => {
   const [users, setUsers] = useState([]);
@@ -10,6 +11,7 @@ const AdminMember = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const token = localStorage.getItem('token');
+  const { API_HOST } = useApiHost();
 
   const ROLE_MAPPING = {
     'ROLE_ADMIN': '관리자',
@@ -20,7 +22,7 @@ const AdminMember = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/users', {
+        const response = await axios.get(`${API_HOST}/api/v1/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(response.data);
@@ -38,7 +40,7 @@ const AdminMember = () => {
   const handleWithdrawUser = async (userId, name) => {
     if (window.confirm(`'${name}' 회원을 강제 탈퇴시키겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
       try {
-        await axios.delete(`http://localhost:8080/api/v1/users/${userId}`, {
+        await axios.delete(`${API_HOST}/api/v1/users/${userId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(users.filter(user => user.userId !== userId));

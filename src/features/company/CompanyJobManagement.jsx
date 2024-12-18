@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -18,7 +19,7 @@ const CompanyJobManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filteredJobs, setFilteredJobs] = useState([]);
-
+  const { API_HOST } = useApiHost();
 
   useEffect(() => {
     fetchJob();
@@ -43,17 +44,17 @@ const CompanyJobManagement = () => {
       setLoading(true);
       setError(null);
 
-      
+
 
       // Authorization 헤더 추가
-      const response = await axios.get("http://localhost:8080/companyprofile/by-company", {
+      const response = await axios.get(`${API_HOST}/companyprofile/by-company`, {
         headers: {
           Authorization: `Bearer ${token}` // Bearer 토큰 추가
         },
         params: {
           userCode: userCode // Query Parameter 추가
         }
-      });      
+      });
 
       if (!response.data) throw new Error('데이터가 없습니다.');
 
@@ -62,17 +63,17 @@ const CompanyJobManagement = () => {
 
       const sortedJobs = reversedData.sort((a, b) => {
         const today = new Date();
-  
+
         const aDeadline = new Date(a.postingDeadline);
         const bDeadline = new Date(b.postingDeadline);
-  
+
         const aIsExpired = aDeadline <= today; // 마감된 항목인지 여부
         const bIsExpired = bDeadline <= today;
-  
+
         if (aIsExpired === bIsExpired) {
           return aDeadline - bDeadline; // 마감일 기준 오름차순 정렬
         }
-  
+
         return aIsExpired ? 1 : -1; // 마감된 항목을 마지막으로 배치
       });
 
@@ -182,7 +183,7 @@ const CompanyJobManagement = () => {
           )}
         </JobGrid>
 
-          {filteredJobs.length > 0 && (
+        {filteredJobs.length > 0 && (
           <Pagination>
             {[...Array(pageCount)].map((_, i) => (
               <PageButton

@@ -2,18 +2,33 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import axios from 'axios'; // axios 추가
 import CompanyLayout from './CompanyLayout';
+import { format, parseISO } from 'date-fns';
+import { ko } from 'date-fns/locale';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const CompanyApplications = () => {
   const [selectedJob, setSelectedJob] = useState('all');
   const [applications, setApplications] = useState([]); // API로 가져온 데이터
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+  const { API_HOST } = useApiHost();
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '날짜 없음';
+    try {
+      const date = parseISO(dateString); // ISO 8601 형식을 안전하게 파싱
+      return format(date, 'yyyy년 MM월 dd일', { locale: ko });
+    } catch (error) {
+      console.error('날짜 변환 오류:', error);
+      return '날짜 오류';
+    }
+  };
 
   // 백엔드 API로부터 지원자 데이터 가져오기
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/apply/jobPoster/applications', {
+        const response = await axios.get(`${API_HOST}/apply/jobPoster/applications`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`, // 예시 토큰 사용
           },
@@ -31,29 +46,29 @@ const CompanyApplications = () => {
   const handleStatusChange = async (applyCode, newStatus) => {
     try {
       await axios.
-      put(
-        `http://localhost:8080/apply/${applyCode}/status`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-        }
-      );
-  
+        put(
+          `${API_HOST}/apply/${applyCode}/status`,
+          { status: newStatus },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+
       // 상태 변경 후 화면 상태 업데이트
       const updatedApplications = applications.map((app) =>
         app.applyCode === applyCode ? { ...app, applyStatus: newStatus } : app
       );
       setApplications(updatedApplications);
-  
+
       alert('상태가 성공적으로 변경되었습니다.');
     } catch (error) {
       console.error('Error updating status:', error);
       alert('상태 변경에 실패했습니다.');
     }
   };
-  
+
 
   // 선택된 공고에 따라 지원자 목록 필터링
   const filteredApplications =
@@ -102,15 +117,19 @@ const CompanyApplications = () => {
                   <Td>{app.email}</Td>
                   <Td>{app.title}</Td>
                   <Td>{app.workExperience}</Td>
-                  <Td>{app.submissionDate}</Td>
+                  <Td>{formatDate(app.submissionDate)}</Td>
                   <Td>
                     <StatusBadge status={app.applyStatus}>
-                      {app.applyStatus}
+                      {app.applyStatus === 'APPLIED' && '서류심사'}
+                      {app.applyStatus === 'PASSED' && '서류통과'}
+                      {app.applyStatus === 'INTERVIEW' && '면접'}
+                      {app.applyStatus === 'ACCEPTED' && '최종합격'}
+                      {app.applyStatus === 'REJECTED' && '불합격'}
                     </StatusBadge>
                   </Td>
                   <Td>
                     <ButtonGroup>
-                      <ActionButton onClick={() => window.open(app.resumeUrl)}>
+                      <ActionButton onClick={() => window.location.href = `/resumes/${app.resumeCode}`}>
                         이력서
                       </ActionButton>
                       <StatusSelect
@@ -198,22 +217,25 @@ const Tr = styled.tr`
 `;
 
 const StatusBadge = styled.span`
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
   font-size: 0.875rem;
+  font-weight: 500;
   
   ${props => {
     switch (props.status) {
-      case '서류심사':
-        return 'background: #e2e8f0; color: #1a365d;';
-      case '1차면접':
-        return 'background: #e6fffa; color: #047857;';
-      case '2차면접':
-        return 'background: #ede9fe; color: #6d28d9;';
-      case '최종합격':
-        return 'background: #dcfce7; color: #166534;';
+      case 'APPLIED':
+        return 'background: #e3f2fd; color: #1565c0;'; // 파란색 계열 (서류심사)
+      case 'PASSED':
+        return 'background: #e8f5e9; color: #2e7d32;'; // 초록색 계열 (서류통과)
+      case 'INTERVIEW':
+        return 'background: #fff3e0; color: #ef6c00;'; // 주황색 계열 (면접)
+      case 'ACCEPTED':
+        return 'background: #e8f5e9; color: #2e7d32;'; // 초록색 계열 (최종합격)
+      case 'REJECTED':
+        return 'background: #ffebee; color: #c62828;'; // 빨간색 계열 (불합격)
       default:
-        return 'background: #fee2e2; color: #991b1b;';
+        return 'background: #f5f5f5; color: #666666;';
     }
   }}
 `;

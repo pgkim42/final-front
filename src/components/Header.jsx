@@ -135,9 +135,9 @@ const Header = () => {
                 <StyledNavLink to="/jobs">채용공고 목록</StyledNavLink>
               </SubMenuItem>
               {userType === "company" &&
-              <SubMenuItem>
-                <StyledNavLink to="/jobs/post">채용등록</StyledNavLink>
-              </SubMenuItem>
+                <SubMenuItem>
+                  <StyledNavLink to="/jobs/post">채용등록</StyledNavLink>
+                </SubMenuItem>
               }
               {/* <SubMenuItem>
                 <StyledNavLink to="/jobs/1">채용공고 상세조회 예시페이지</StyledNavLink>
@@ -145,31 +145,31 @@ const Header = () => {
             </SubMenu>
           </NavItem>
 
-          {userType !== "company"  &&(
-          <NavItem>
-            이력서
-            <SubMenu>
-              <SubMenuItem>
-                <StyledNavLink to="/resumes/post">이력서 등록</StyledNavLink>
-              </SubMenuItem>
-              {/* <SubMenuItem>
+          {userType !== "company" && (
+            <NavItem>
+              이력서
+              <SubMenu>
+                <SubMenuItem>
+                  <StyledNavLink to="/resumes/post">이력서 등록</StyledNavLink>
+                </SubMenuItem>
+                {/* <SubMenuItem>
                 <StyledNavLink to="/ResumeRead">이력서 조회</StyledNavLink>
                 <StyledNavLink to="/resumes/read">이력서 조회 테스트</StyledNavLink>
               </SubMenuItem> */}
-              {/* <SubMenuItem>
+                {/* <SubMenuItem>
                 <StyledNavLink to="/ResumeEdit">이력서 수정</StyledNavLink>
                 <StyledNavLink to="/resumes/edit">이력서 수정 테스트</StyledNavLink>
               </SubMenuItem> */}
-              <SubMenuItem>
-                <StyledNavLink to="/resumes/list">이력서 목록</StyledNavLink>
-              </SubMenuItem>
-              {/* <SubMenuItem>
+                <SubMenuItem>
+                  <StyledNavLink to="/resumes/list">이력서 목록</StyledNavLink>
+                </SubMenuItem>
+                {/* <SubMenuItem>
                 <StyledNavLink to="/TestResume">이력서 API 테스트</StyledNavLink>
               </SubMenuItem> */}
-            </SubMenu>
-          </NavItem>
+              </SubMenu>
+            </NavItem>
           )}
-          
+
           {/* <NavItem>
             Member
             <SubMenu>
@@ -192,13 +192,15 @@ const Header = () => {
               <SubMenuItem>
                 <StyledNavLink to="/company_test">회사정보 테스트페이지</StyledNavLink>
               </SubMenuItem> */}
-              <SubMenuItem>
-                <StyledNavLink to="/admin">관리자 메인 페이지</StyledNavLink>
-              </SubMenuItem>
+              {userType === "admin" && (
+                <SubMenuItem>
+                  <StyledNavLink to="/admin">관리자 메인 페이지</StyledNavLink>
+                </SubMenuItem>
+              )}
             </SubMenu>
           </NavItem>
 
-          {userType === "company" &&(
+          {userType === "company" && (
             <>
               <NavItem>
                 기업용 페이지

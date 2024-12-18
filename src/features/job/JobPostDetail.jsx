@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import JobListBar from './JobListBar';
 import { useRef } from 'react';
 import { useAuth } from '../../pages/AuthContent';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const { kakao } = window; // 카카오맵 SDK
 
@@ -19,6 +20,7 @@ const JobPostDetail = () => {
   const [error, setError] = useState(null);
   const [isAuthor, setIsAuthor] = useState(false);
   const [coordinates, setCoordinates] = useState(null); // 위도, 경도 상태 관리
+  const { API_HOST } = useApiHost();
 
   const mapContainerRef = useRef(null); // 지도 컨테이너 Ref  
 
@@ -39,7 +41,7 @@ const JobPostDetail = () => {
     if (window.confirm('정말 삭제하시겠습니까?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:8080/jobposting/remove/${code}`, {
+        await axios.delete(`${API_HOST}/jobposting/remove/${code}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         navigate('/jobs');
@@ -53,7 +55,7 @@ const JobPostDetail = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:8080/jobposting/${code}/company-profile-code`,
+        `${API_HOST}/jobposting/${code}/company-profile-code`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -86,13 +88,13 @@ const JobPostDetail = () => {
   useEffect(() => {
     const fetchJobDetail = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/jobposting/read?no=${code}`);
+        const response = await axios.get(`${API_HOST}/jobposting/read?no=${code}`);
         setJob(response.data);
         console.log(response.data);
 
         // 좌표 가져오기
         if (response.data.address) {
-          const coordResponse = await axios.get(`http://localhost:8080/kakao-map/coordinates/${response.data.jobCode}`);
+          const coordResponse = await axios.get(`${API_HOST}/kakao-map/coordinates/${response.data.jobCode}`);
           const coordData = coordResponse.data;
 
           if (coordData.documents.length > 0) {
@@ -106,7 +108,7 @@ const JobPostDetail = () => {
         // 회사이름 가져오기
         const companyProfileCode = response.data.companyProfileCode;
         if (companyProfileCode) {
-          const companyResponse = await axios.get(`http://localhost:8080/companyprofile/read/${companyProfileCode}`);
+          const companyResponse = await axios.get(`${API_HOST}/companyprofile/read/${companyProfileCode}`);
           setJob(prevJob => ({
             ...prevJob,
             companyName: companyResponse.data.companyName,
@@ -123,7 +125,7 @@ const JobPostDetail = () => {
   useEffect(() => {
     const fetchRecentJobs = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/jobposting/list');
+        const response = await axios.get(`${API_HOST}/jobposting/list`);
         const sortedJobs = response.data
           .filter(j => j.jobCode !== parseInt(code))
           .sort((a, b) => new Date(b.postingDate) - new Date(a.postingDate))
@@ -143,7 +145,7 @@ const JobPostDetail = () => {
       if (!job || !job.jobCode) return;
 
       try {
-        const response = await axios.get(`http://localhost:8080/kakao-map/coordinates/${job.jobCode}`);
+        const response = await axios.get(`${API_HOST}/kakao-map/coordinates/${job.jobCode}`);
         console.log('Coordinates response:', response.data); // 로그 확인
 
         if (response.data.documents.length > 0) {
@@ -241,7 +243,7 @@ const JobPostDetail = () => {
               <SectionContent>{format(new Date(job.postingDeadline), 'yyyy년 MM월 dd일')}</SectionContent>
             </Section>
 
-            {(userType === "kakao" || userType === "naver" || userType === "dev")  &&(
+            {(userType === "kakao" || userType === "naver" || userType === "dev") && (
               <ApplySection>
                 <ApplyButton onClick={handleApply}>지원하기</ApplyButton>
               </ApplySection>

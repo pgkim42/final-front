@@ -4,6 +4,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const GlobalStyle = createGlobalStyle`
   body {
@@ -128,7 +129,7 @@ const JobPosting = () => {
     skill: '',
     address: '',
   });
-
+  const { API_HOST } = useApiHost();
   const navigate = useNavigate();
 
   const handleFileChange = (e) => {
@@ -142,7 +143,7 @@ const JobPosting = () => {
       return;
     }
     axios
-      .get('http://localhost:8080/api/v1/company-profile-code', {
+      .get(`${API_HOST}/api/v1/company-profile-code`, {
         headers: {
           Authorization: `Bearer ${storedToken}`,
         },
@@ -184,7 +185,7 @@ const JobPosting = () => {
         }
       });
 
-      await axios.post('http://localhost:8080/jobposting/register', formDataToSend, {
+      await axios.post(`${API_HOST}/jobposting/register`, formDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',

@@ -77,7 +77,7 @@ function App() {
           <Route path={ROUTES.RESUME.READ_TEST} element={<ResumeRead />} />
 
           {/* 프로필/마이페이지 관련 */}
-          <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
+          {/* <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} /> */}
           <Route path={ROUTES.PROFILE.COMPANY_TEST} element={<CompanyProfile />} />
           <Route path={ROUTES.PROFILE.APPLICATIONS} element={<ApplicationManagement />} />
           <Route path={ROUTES.PROFILE.MY_PAGE} element={<UserMyPage />} />

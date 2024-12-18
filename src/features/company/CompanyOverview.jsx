@@ -5,12 +5,14 @@ import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const ITEMS_PER_PAGE = 9;
 
 // 메인 컴포넌트
 const CompanyOverview = () => {
   const navigate = useNavigate();
+  const { API_HOST } = useApiHost();
   const [companyInfo, setCompanyInfo] = useState({
     name: "",
     logo: "https://via.placeholder.com/150",
@@ -79,14 +81,14 @@ const CompanyOverview = () => {
       setError(null);
 
       // Authorization 헤더 추가
-      const response = await axios.get("http://localhost:8080/companyprofile/by-user", {
+      const response = await axios.get(`${API_HOST}/companyprofile/by-user`, {
         headers: {
           Authorization: `Bearer ${token}` // Bearer 토큰 추가
         },
         params: {
           companyProfileCode: companyProfileCode // Query Parameter 추가
         }
-      });      
+      });
 
       if (!response.data) throw new Error('데이터가 없습니다.');
 
@@ -95,17 +97,17 @@ const CompanyOverview = () => {
 
       const sortedJobs = reversedData.sort((a, b) => {
         const today = new Date();
-  
+
         const aDeadline = new Date(a.postingDeadline);
         const bDeadline = new Date(b.postingDeadline);
-  
+
         const aIsExpired = aDeadline <= today; // 마감된 항목인지 여부
         const bIsExpired = bDeadline <= today;
-  
+
         if (aIsExpired === bIsExpired) {
           return aDeadline - bDeadline; // 마감일 기준 오름차순 정렬
         }
-  
+
         return aIsExpired ? 1 : -1; // 마감된 항목을 마지막으로 배치
       });
 
@@ -193,7 +195,7 @@ const CompanyOverview = () => {
         // API 요청
         const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
         const response = await axios.get(
-          `http://localhost:8080/companyprofile/read/${companyProfileCode}`,
+          `${API_HOST}/companyprofile/read/${companyProfileCode}`,
           { headers }
         );
 
@@ -239,182 +241,182 @@ const CompanyOverview = () => {
 
       {/* 채용 대시보드 */}
 
-        
-        
-          <ChartGrid>
-            <ChartCard>
-              <ChartTitle>일별 지원자 현황</ChartTitle>
-              <LineChart width={500} height={300} data={applicationData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#8884d8" />
-              </LineChart>
-            </ChartCard>
 
-            <ChartCard>
-              <ChartTitle>공고별 지원자 현황</ChartTitle>
-              <BarChart width={500} height={300} data={jobStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="applications" fill="#82ca9d" />
-              </BarChart>
-            </ChartCard>
-          </ChartGrid>
+
+      <ChartGrid>
+        <ChartCard>
+          <ChartTitle>일별 지원자 현황</ChartTitle>
+          <LineChart width={500} height={300} data={applicationData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="count" stroke="#8884d8" />
+          </LineChart>
+        </ChartCard>
+
+        <ChartCard>
+          <ChartTitle>공고별 지원자 현황</ChartTitle>
+          <BarChart width={500} height={300} data={jobStats}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="applications" fill="#82ca9d" />
+          </BarChart>
+        </ChartCard>
+      </ChartGrid>
 
 
       {/* 채용 공고 관리 */}
-        <Header>
-          <h1>채용공고 관리</h1>
-        </Header>
+      <Header>
+        <h1>채용공고 관리</h1>
+      </Header>
 
-        <Dashboard>
-          <StatBox>
-            <h3>전체 공고</h3>
-            <span>{stats.total}</span>
-          </StatBox>
-          <StatBox>
-            <h3>진행중</h3>
-            <span>{stats.active}</span>
-          </StatBox>
-          <StatBox>
-            <h3>마감</h3>
-            <span>{stats.closed}</span>
-          </StatBox>
-        </Dashboard>
+      <Dashboard>
+        <StatBox>
+          <h3>전체 공고</h3>
+          <span>{stats.total}</span>
+        </StatBox>
+        <StatBox>
+          <h3>진행중</h3>
+          <span>{stats.active}</span>
+        </StatBox>
+        <StatBox>
+          <h3>마감</h3>
+          <span>{stats.closed}</span>
+        </StatBox>
+      </Dashboard>
 
-        <FilterSection>
-          <FilterButton
-            active={filter === 'all'}
-            onClick={() => setFilter('all')}>
-            전체
-          </FilterButton>
-          <FilterButton
-            active={filter === '진행중'}
-            onClick={() => setFilter('진행중')}>
-            진행중
-          </FilterButton>
-          <FilterButton
-            active={filter === '마감'}
-            onClick={() => setFilter('마감')}>
-            마감
-          </FilterButton>
-        </FilterSection>
+      <FilterSection>
+        <FilterButton
+          active={filter === 'all'}
+          onClick={() => setFilter('all')}>
+          전체
+        </FilterButton>
+        <FilterButton
+          active={filter === '진행중'}
+          onClick={() => setFilter('진행중')}>
+          진행중
+        </FilterButton>
+        <FilterButton
+          active={filter === '마감'}
+          onClick={() => setFilter('마감')}>
+          마감
+        </FilterButton>
+      </FilterSection>
 
-        <JobGrid>
-          {filteredJobs.length === 0 ? (
-            <NoDataWrapper>검색 결과가 없습니다.</NoDataWrapper>
-          ) : (
-            currentJobs.map(job => (
-              <JobCard key={job.jobCode} disabled={!job.postingStatus}>
-                <Link to={`/jobs/${job.jobCode}`}>
-                  {job.imageUrl && (
-                    <Thumbnail>
-                      <img src={job.imageUrl} alt="공고 이미지" />
-                    </Thumbnail>
-                  )}
-                  <JobInfo>
-                    <JobTitle>{job.title}</JobTitle>
-                    <Location>{job.address}</Location>
-                    <Salary>{job.salary}</Salary>
-                    <Experience>
-                      {job.workExperience === 0
-                        ? '신입'
-                        : job.workExperience === -1
-                          ? '경력무관'
-                          : job.workExperience > 0
-                            ? `경력 ${job.workExperience}년`
-                            : '경력 정보 없음'}
-                    </Experience>
-                    <SkillTags>
-                      {job.skill && job.skill.split(',').map((skill, index) => (
-                        <SkillTag key={index}>{skill.trim()}</SkillTag>
-                      ))}
-                    </SkillTags>
-                    <Deadline>마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}</Deadline>
-                  </JobInfo>
-                </Link>
-              </JobCard>
-            ))
-          )}
-        </JobGrid>
-
-        {filteredJobs.length > 0 && (
-          <Pagination>
-            {[...Array(pageCount)].map((_, i) => (
-              <PageButton
-                key={i + 1}
-                active={currentPage === i + 1}
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </PageButton>
-            ))}
-          </Pagination>
+      <JobGrid>
+        {filteredJobs.length === 0 ? (
+          <NoDataWrapper>검색 결과가 없습니다.</NoDataWrapper>
+        ) : (
+          currentJobs.map(job => (
+            <JobCard key={job.jobCode} disabled={!job.postingStatus}>
+              <Link to={`/jobs/${job.jobCode}`}>
+                {job.imageUrl && (
+                  <Thumbnail>
+                    <img src={job.imageUrl} alt="공고 이미지" />
+                  </Thumbnail>
+                )}
+                <JobInfo>
+                  <JobTitle>{job.title}</JobTitle>
+                  <Location>{job.address}</Location>
+                  <Salary>{job.salary}</Salary>
+                  <Experience>
+                    {job.workExperience === 0
+                      ? '신입'
+                      : job.workExperience === -1
+                        ? '경력무관'
+                        : job.workExperience > 0
+                          ? `경력 ${job.workExperience}년`
+                          : '경력 정보 없음'}
+                  </Experience>
+                  <SkillTags>
+                    {job.skill && job.skill.split(',').map((skill, index) => (
+                      <SkillTag key={index}>{skill.trim()}</SkillTag>
+                    ))}
+                  </SkillTags>
+                  <Deadline>마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}</Deadline>
+                </JobInfo>
+              </Link>
+            </JobCard>
+          ))
         )}
+      </JobGrid>
+
+      {filteredJobs.length > 0 && (
+        <Pagination>
+          {[...Array(pageCount)].map((_, i) => (
+            <PageButton
+              key={i + 1}
+              active={currentPage === i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </PageButton>
+          ))}
+        </Pagination>
+      )}
 
       {/* 통계 */}
-        <Header>
-          <h1>채용 통계</h1>
-        </Header>
-        <Grid>
-          <Card>
-            <CardTitle>채용 단계별 현황</CardTitle>
-            <BarChart width={500} height={300} data={recruitmentStages}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
-          </Card>
+      <Header>
+        <h1>채용 통계</h1>
+      </Header>
+      <Grid>
+        <Card>
+          <CardTitle>채용 단계별 현황</CardTitle>
+          <BarChart width={500} height={300} data={recruitmentStages}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="value" fill="#8884d8" />
+          </BarChart>
+        </Card>
 
-          <Card>
-            <CardTitle>지원자 학력 분포</CardTitle>
-            <PieChart width={500} height={300}>
-              <Pie
-                data={educationStats}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                outerRadius={100}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {educationStats.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </Card>
+        <Card>
+          <CardTitle>지원자 학력 분포</CardTitle>
+          <PieChart width={500} height={300}>
+            <Pie
+              data={educationStats}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={100}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {educationStats.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip />
+            <Legend />
+          </PieChart>
+        </Card>
 
-          <Card>
-            <CardTitle>월별 지원자 추이</CardTitle>
-            <AreaChart width={500} height={300} data={monthlyApplications}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Area type="monotone" dataKey="count" stroke="#82ca9d" fill="#82ca9d" />
-            </AreaChart>
-          </Card>
+        <Card>
+          <CardTitle>월별 지원자 추이</CardTitle>
+          <AreaChart width={500} height={300} data={monthlyApplications}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="month" />
+            <YAxis />
+            <Tooltip />
+            <Area type="monotone" dataKey="count" stroke="#82ca9d" fill="#82ca9d" />
+          </AreaChart>
+        </Card>
 
-          <Card>
-            <CardTitle>직무별 경쟁률</CardTitle>
-            <BarChart width={500} height={300} data={competitionRate} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="position" type="category" />
-              <Tooltip />
-              <Bar dataKey="rate" fill="#0088FE" />
-            </BarChart>
-          </Card>
-        </Grid>
+        <Card>
+          <CardTitle>직무별 경쟁률</CardTitle>
+          <BarChart width={500} height={300} data={competitionRate} layout="vertical">
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis type="number" />
+            <YAxis dataKey="position" type="category" />
+            <Tooltip />
+            <Bar dataKey="rate" fill="#0088FE" />
+          </BarChart>
+        </Card>
+      </Grid>
     </Container>
   );
 };

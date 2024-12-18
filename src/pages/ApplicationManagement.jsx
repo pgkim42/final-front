@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import styled from 'styled-components';
+import { useApiHost } from '../context/ApiHostContext';
 
 const STATUS_MAPPING = {
   'APPLIED': '지원완료',
@@ -38,6 +39,7 @@ const ApplicationManagement = () => {
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { API_HOST } = useApiHost();
 
   const handleDeleteClick = (applyCode) => {
     setSelectedApplicationId(applyCode);
@@ -47,7 +49,7 @@ const ApplicationManagement = () => {
   const handleConfirmDelete = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:8080/apply/remove/${selectedApplicationId}`, {
+      await axios.delete(`${API_HOST}/apply/remove/${selectedApplicationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setApplications(applications.filter(app => app.applyCode !== selectedApplicationId));
@@ -62,7 +64,7 @@ const ApplicationManagement = () => {
     const fetchApplications = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/apply/myApply', {
+        const response = await axios.get(`${API_HOST}/apply/myApply`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -161,7 +163,7 @@ const ApplicationManagement = () => {
                 {formatDateTime(application.submissionDate)}</ApplyDate>
               <ButtonGroup>
                 <ViewButton onClick={() => window.location.href =
-                  `http://localhost:3000/profile/applications/${application.applyCode}`}>상세보기
+                  `/profile/applications/${application.applyCode}`}>상세보기
                 </ViewButton>
                 <DeleteButton onClick={() => handleDeleteClick(application.applyCode)}>
                   취소

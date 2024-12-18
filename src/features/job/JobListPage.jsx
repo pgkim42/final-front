@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const ITEMS_PER_PAGE = 9;
 
@@ -15,37 +16,32 @@ const JobListPage = () => {
   const [filteredJobs, setFilteredJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { API_HOST } = useApiHost();
 
   useEffect(() => {
     fetchJobs();
     fetchRecommendedJobs(1); // 예: 이력서 코드 1로 추천 공고 가져오기
   }, []);
-
   const fetchJobs = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get('http://localhost:8080/jobposting/list');
+      const response = await axios.get(`${API_HOST}/jobposting/list`);
       if (!response.data) throw new Error('데이터가 없습니다.');
 
-      // 데이터를 역순으로 정렬
-      const reversedData = [...response.data].reverse();
-      // 또는 jobCode 기준으로 정렬하려면:
-      // const reversedData = [...response.data].sort((a, b) => b.jobCode - a.jobCode);
+      // 활성화된 공고만 필터링 후 역순 정렬
+      const activeJobs = response.data.filter(job => job.postingStatus);
+      const reversedData = [...activeJobs].reverse();
 
       const jobsWithImage = reversedData.map(job => ({
         ...job,
-        imageUrl: job.imgPath,
+        imageUrl: job.imgPath ? `${API_HOST}${job.imgPath}` : null
       }));
 
-      // setJobs(reversedData);
-      // setFilteredJobs(reversedData);
       setJobs(jobsWithImage);
       setFilteredJobs(jobsWithImage);
-
-    } catch (err) {
-      setError(err.message || '채용공고를 불러오는데 실패했습니다.');
-      console.error('Error fetching jobs:', err);
+    } catch (error) {
+      setError('공고 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -53,10 +49,10 @@ const JobListPage = () => {
 
   const fetchRecommendedJobs = async (resumeCode) => {
     try {
-      const response = await axios.get(`http://localhost:8080/similarposting/1`, {
+      const response = await axios.get(`${API_HOST}/similarposting/1`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
-          
+
         },
       });
       if (response.status === 200) {
@@ -83,33 +79,33 @@ const JobListPage = () => {
         !searchTerm ||
         job.title?.toLowerCase().includes(lowerCaseSearchTerm) ||
         job.address?.toLowerCase().includes(lowerCaseSearchTerm);
-  
+
       // 스킬 필터링: 선택된 스킬 키워드가 스킬 목록에 시작하는지 검사
       const allowedKeywords = ["react", "vue", "angular", "node.js", "java", "spring", "aws"];
-  
+
       // job.skill을 배열로 변환하고 대소문자 무시
       const jobSkills = job.skill
         ?.split(',')
         .map(skill => skill.trim().toLowerCase()) || [];
-  
+
       // 선택된 스킬이 없으면 모든 항목 통과, 선택된 스킬이 있으면 부분 매칭
       const matchesSkills =
         selectedSkills.length === 0 ||
         selectedSkills.every(selectedSkill => {
           const lowerCaseSkill = selectedSkill.toLowerCase();
-          return jobSkills.some(jobSkill => 
+          return jobSkills.some(jobSkill =>
             allowedKeywords.includes(lowerCaseSkill) && jobSkill.startsWith(lowerCaseSkill)
           );
         });
-  
+
       // 최종 조건: 검색어 검사 && 스킬 필터링
       return matchesSearch && matchesSkills;
     });
-  
+
     setFilteredJobs(filtered);
     setCurrentPage(1);
   }, [searchTerm, selectedSkills, jobs]);
-  
+
 
   if (loading) return <LoadingWrapper>로딩 중...</LoadingWrapper>;
   if (error) return <ErrorWrapper>{error}</ErrorWrapper>;
@@ -146,47 +142,47 @@ const JobListPage = () => {
       </FilterSection>
 
       {/* 추천 공고 섹션 추가 */}
-    {recommendedJobs.length > 0 && (
-      <RecommendedSection>
-        <h2>Ai 추천 공고</h2>
-        <JobGrid>
-          {recommendedJobs.map(job => (
-            <HighlightedJobCard key={job.jobCode} disabled={!job.postingStatus}>
-              <Link to={`/jobs/${job.jobCode}`}>
-                {job.imageUrl && (
-                  <HighlightedThumbnail>
-                    <img src={job.imageUrl} alt="추천 공고 이미지" />
-                  </HighlightedThumbnail>
-                )}
-                <HighlightedJobInfo>
-                  <JobTitle>{job.title}</JobTitle>
-                  <Location>{job.address}</Location>
-                  <Salary>{job.salary}</Salary>
-                  <Experience>
-                    {job.workExperience === 0
-                      ? '신입'
-                      : job.workExperience === -1
-                        ? '경력무관'
-                        : `경력 ${job.workExperience}년`}
-                  </Experience>
-                  <SkillTags>
-                    {job.skill && job.skill.split(',').map((skill, index) => (
-                      <HighlightedSkillTag key={index}>{skill.trim()}</HighlightedSkillTag>
-                    ))}
-                  </SkillTags>
-                  <Deadline>
-                    마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}
-                  </Deadline>
-                  {!job.postingStatus && (
-                    <div style={{ color: 'red', fontWeight: 'bold' }}>마감된 공고</div>
+      {recommendedJobs.length > 0 && (
+        <RecommendedSection>
+          <h2>Ai 추천 공고</h2>
+          <JobGrid>
+            {recommendedJobs.map(job => (
+              <HighlightedJobCard key={job.jobCode} disabled={!job.postingStatus}>
+                <Link to={`/jobs/${job.jobCode}`}>
+                  {job.imageUrl && (
+                    <HighlightedThumbnail>
+                      <img src={job.imageUrl} alt="추천 공고 이미지" />
+                    </HighlightedThumbnail>
                   )}
-                </HighlightedJobInfo>
-              </Link>
-            </HighlightedJobCard>
-          ))}
-        </JobGrid>
-      </RecommendedSection>
-    )}
+                  <HighlightedJobInfo>
+                    <JobTitle>{job.title}</JobTitle>
+                    <Location>{job.address}</Location>
+                    <Salary>{job.salary}</Salary>
+                    <Experience>
+                      {job.workExperience === 0
+                        ? '신입'
+                        : job.workExperience === -1
+                          ? '경력무관'
+                          : `경력 ${job.workExperience}년`}
+                    </Experience>
+                    <SkillTags>
+                      {job.skill && job.skill.split(',').map((skill, index) => (
+                        <HighlightedSkillTag key={index}>{skill.trim()}</HighlightedSkillTag>
+                      ))}
+                    </SkillTags>
+                    <Deadline>
+                      마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}
+                    </Deadline>
+                    {!job.postingStatus && (
+                      <div style={{ color: 'red', fontWeight: 'bold' }}>마감된 공고</div>
+                    )}
+                  </HighlightedJobInfo>
+                </Link>
+              </HighlightedJobCard>
+            ))}
+          </JobGrid>
+        </RecommendedSection>
+      )}
       <h2>구인 공고</h2>
       <JobGrid>
         {filteredJobs.length === 0 ? (

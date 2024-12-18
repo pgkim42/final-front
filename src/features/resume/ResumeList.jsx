@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const formatLocalDateTime = (localDateTime) => {
   if (!localDateTime) return "없음";
@@ -16,6 +17,7 @@ const ResumeList = () => {
   const [resumes, setResumes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { API_HOST } = useApiHost();
 
   const token = localStorage.getItem('token');
   const userCode = localStorage.getItem('userCode');
@@ -25,7 +27,7 @@ const ResumeList = () => {
   useEffect(() => {
     const apicall = async () => {
       // Postman 보고 API 주소 수정
-      const response = await axios.get(`http://localhost:8080/resume/list`, {
+      const response = await axios.get(`${API_HOST}/resume/list`, {
         headers: {
           Authorization: `Bearer ${token}`
         },
@@ -51,7 +53,7 @@ const ResumeList = () => {
     if (!window.confirm('이력서를 삭제하시겠습니까?')) return;
 
     try {
-      const response = await axios.delete(`http://localhost:8080/resume/remove/${resumeCode}`, {
+      const response = await axios.delete(`${API_HOST}/resume/remove/${resumeCode}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 

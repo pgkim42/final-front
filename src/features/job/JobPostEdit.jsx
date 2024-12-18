@@ -4,6 +4,7 @@ import axios from 'axios';
 import styled, { createGlobalStyle } from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const JobPostEdit = () => {
   const { code } = useParams();
@@ -25,6 +26,7 @@ const JobPostEdit = () => {
     skill: '',
     address: ''
   });
+  const { API_HOST } = useApiHost();
 
   const handleFileChange = (e) => {
     setFormData((prev) => ({ ...prev, image: e.target.files[0] }));
@@ -33,7 +35,7 @@ const JobPostEdit = () => {
   useEffect(() => {
     const fetchJob = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/jobposting/read?no=${code}`);
+        const response = await axios.get(`${API_HOST}/jobposting/read?no=${code}`);
         setFormData(response.data);
       } catch (err) {
         setError('채용공고를 불러오는데 실패했습니다.');
@@ -54,7 +56,7 @@ const JobPostEdit = () => {
       });
 
       await axios.patch(
-        `http://localhost:8080/jobposting/modify`,
+        `${API_HOST}/jobposting/modify`,
         formDataToSend,
         {
           headers: {

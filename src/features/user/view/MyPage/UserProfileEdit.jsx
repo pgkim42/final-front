@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../pages/AuthContent";
 import Modal from "react-modal";
+import { useApiHost } from '../../../../context/ApiHostContext';
 
 Modal.setAppElement("#root"); // Modal 접근성을 위한 설정
 
@@ -23,6 +24,7 @@ const UserProfileEdit = () => {
   const [serverError, setServerError] = useState("");
   const [activeSection, setActiveSection] = useState("profile");
   const [loading, setLoading] = useState(false); // 로딩 상태 추가
+  const { API_HOST } = useApiHost();
 
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -71,7 +73,7 @@ const UserProfileEdit = () => {
           return;
         }
 
-        const response = await fetch("http://localhost:8080/api/v1/change-password", {
+        const response = await fetch(`${API_HOST}/api/v1/change-password`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -123,7 +125,7 @@ const UserProfileEdit = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/social-remove", {
+      const response = await fetch(`${API_HOST}/api/v1/social-remove`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,7 +154,7 @@ const UserProfileEdit = () => {
     <>
       <Title>회원정보 확인</Title>
       <Container>
-      <MainContent>
+        <MainContent>
           <Form onSubmit={handleSubmit}>
             {/* 프로필 섹션 */}
             {activeSection === "profile" && (
@@ -210,14 +212,14 @@ const UserProfileEdit = () => {
             )}
 
             {activeSection === "password" && (
-            <ButtonGroup>
-              <SaveButton type="submit" disabled={loading}>
-                {loading ? "저장 중..." : "저장하기"}
-              </SaveButton>
-              <CancelButton type="button" onClick={() => navigate("/mypage")}>
-                취소
-              </CancelButton>
-            </ButtonGroup>
+              <ButtonGroup>
+                <SaveButton type="submit" disabled={loading}>
+                  {loading ? "저장 중..." : "저장하기"}
+                </SaveButton>
+                <CancelButton type="button" onClick={() => navigate("/mypage")}>
+                  취소
+                </CancelButton>
+              </ButtonGroup>
             )}
           </Form>
         </MainContent>
@@ -242,7 +244,7 @@ const UserProfileEdit = () => {
           </NavMenu>
         </Sidebar>
 
-      {/* 회원탈퇴 확인 모달 */}
+        {/* 회원탈퇴 확인 모달 */}
         <Modal
           isOpen={isSocialRemoveModalOpen}
           onRequestClose={handleCloseSocialRemoveModal}
@@ -275,9 +277,9 @@ const UserProfileEdit = () => {
                     회원 탈퇴를 진행하여 통합 로그인 계정에 <br /> 귀속된 모든 정보를 삭제하는데 동의합니다.
                   </Labels>
                 </CheckboxContainer>
-                  <Labels>
-                    {resolvedUserId}/탈퇴합니다 를 입력하세요
-                  </Labels>
+                <Labels>
+                  {resolvedUserId}/탈퇴합니다 를 입력하세요
+                </Labels>
                 <InputContainer>
                   <PasswordInput
                     type="text"

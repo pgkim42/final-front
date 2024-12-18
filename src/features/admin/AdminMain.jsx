@@ -5,6 +5,7 @@ import {
   PieChart, Pie, Cell, Tooltip, Legend
 } from 'recharts';
 import styled from 'styled-components';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const ROLE_MAPPING = {
   'ROLE_ADMIN': '관리자',
@@ -28,11 +29,12 @@ const AdminMain = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const token = localStorage.getItem('token');
+  const { API_HOST } = useApiHost();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/users', {
+        const response = await axios.get(`${API_HOST}/api/v1/users`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUsers(response.data);
@@ -50,7 +52,7 @@ const AdminMain = () => {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await axios.get('http://localhost:8080/jobposting/list', {
+        const response = await axios.get(`${API_HOST}/jobposting/list`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         console.log('Jobs data:', response.data);

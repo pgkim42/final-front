@@ -5,6 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line
 } from 'recharts';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const CompanyDashboard = () => {
   const applicationData = [
@@ -27,6 +28,8 @@ const CompanyDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const { API_HOST } = useApiHost();
+
   const [comStats, setComStats] = useState({
     totalComApplications: 0,
     ongoingComApplications: 0,
@@ -39,7 +42,7 @@ const CompanyDashboard = () => {
 
     if (userCode && token) {
       axios
-        .get(`http://localhost:8080/apply/applications/count`, {
+        .get(`${API_HOST}/apply/applications/count`, {
           params: { userCode },
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -87,14 +90,14 @@ const CompanyDashboard = () => {
       setError(null);
 
       // Authorization 헤더 추가
-      const response = await axios.get("http://localhost:8080/companyprofile/by-company", {
+      const response = await axios.get(`${API_HOST}/companyprofile/by-company`, {
         headers: {
           Authorization: `Bearer ${token}` // Bearer 토큰 추가
         },
         params: {
           userCode: userCode // Query Parameter 추가
         }
-      });      
+      });
 
       if (!response.data) throw new Error('데이터가 없습니다.');
 

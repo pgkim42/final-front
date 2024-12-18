@@ -1,150 +1,88 @@
 import styled from 'styled-components';
 
-const FooterWrapper = styled.footer`
-  background-color: #2c3e50;
-  color: #ecf0f1;
-  padding: 40px 0;
-`;
-
-const FooterContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-`;
-
-const FooterSection = styled.div`
-  flex: 1;
-  min-width: 200px;
-`;
-
-const FooterTitle = styled.h3`
-  color: #3498db;
-  font-size: 18px;
-  margin-bottom: 15px;
-`;
-
-const FooterList = styled.ul`
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-`;
-
-const FooterListItem = styled.li`
-  margin-bottom: 10px;
-`;
-
-const FooterLink = styled.a`
-  color: #ecf0f1;
-  text-decoration: none;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: #3498db;
-  }
-`;
-
-const SocialIcons = styled.div`
-  display: flex;
-  gap: 15px;
-  margin-top: 15px;
-`;
-
-const SocialIcon = styled.a`
-  color: #ecf0f1;
-  font-size: 20px;
-  transition: color 0.3s ease;
-
-  &:hover {
-    color: #3498db;
-  }
-`;
-
-const Copyright = styled.p`
-  text-align: center;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #34495e;
-`;
-
 const Footer = () => {
   return (
     <FooterWrapper>
       <FooterContent>
         <FooterSection>
-          <FooterTitle>회사 소개</FooterTitle>
-          <FooterList>
-            <FooterListItem>
-              <FooterLink href="/about">About Us</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/careers">채용정보</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/contact">문의하기</FooterLink>
-            </FooterListItem>
-          </FooterList>
+          <SectionTitle>DevJobs</SectionTitle>
+          <Description>
+            IT 업계 전문 채용 플랫폼으로,<br />
+            기업과 인재를 연결하는 최적의 솔루션을 제공합니다.
+          </Description>
+          <div style={{ marginTop: '0.1rem', color: '#4a90e2', fontSize: '0.9rem', fontStyle: 'italic' }}>
+            "혁신적인 기술로 당신의 꿈을 현실로 만드는 곳, DevJobs가 함께합니다."
+          </div>
         </FooterSection>
+
         <FooterSection>
-          <FooterTitle>서비스</FooterTitle>
-          <FooterList>
-            <FooterListItem>
-              <FooterLink href="/job-search">채용공고 검색</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/resume-builder">이력서 작성</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/career-advice">커리어 조언</FooterLink>
-            </FooterListItem>
-          </FooterList>
-        </FooterSection>
-        <FooterSection>
-          <FooterTitle>고객지원</FooterTitle>
-          <FooterList>
-            <FooterListItem>
-              <FooterLink href="/faq">자주 묻는 질문</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/privacy">개인정보처리방침</FooterLink>
-            </FooterListItem>
-            <FooterListItem>
-              <FooterLink href="/terms">이용약관</FooterLink>
-            </FooterListItem>
-          </FooterList>
-        </FooterSection>
-        <FooterSection>
-          <FooterTitle>팔로우</FooterTitle>
-          <SocialIcons>
-            <SocialIcon href="https://facebook.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-facebook-f"></i>
-            </SocialIcon>
-            <SocialIcon href="https://twitter.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-twitter"></i>
-            </SocialIcon>
-            <SocialIcon href="https://linkedin.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-linkedin-in"></i>
-            </SocialIcon>
-            <SocialIcon href="https://instagram.com" target="_blank" rel="noopener noreferrer">
-              <i className="fab fa-instagram"></i>
-            </SocialIcon>
-          </SocialIcons>
+          <SectionTitle>연락처</SectionTitle>
+          <ContactInfo>
+            <div>서울특별시 강남구 테헤란로 123</div>
+            <div>Email: contact@techrecruit.com</div>
+            <div>Tel: 02-1234-5678</div>
+            <div>대표: 심태훈</div>
+          </ContactInfo>
         </FooterSection>
       </FooterContent>
+
       <Copyright>
-        © 2024 채용사이트. All rights reserved.
+        © 2024 Tech Recruit | 개인정보처리방침 | 이용약관
       </Copyright>
     </FooterWrapper>
   );
 };
 
-export default Footer;
+const FooterWrapper = styled.footer`
+  background-color: #1a1a1a;
+  color: #ffffff;
+  padding: 3rem 0 1rem;
+`;
 
+const FooterContent = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  padding: 0 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;  // 1rem에서 0.5rem으로 축소
+  color: #ffffff;
+`;
+
+const FooterSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;  // 1rem에서 0.5rem으로 축소
+`;
+
+const Description = styled.p`
+  color: #b3b3b3;
+  line-height: 1.6;
+  margin-top: 0;  // 상단 여백 제거
+`;
+
+const ContactInfo = styled.div`
+  color: #b3b3b3;
+  line-height: 1.8;
+`;
+
+const Copyright = styled.div`
+  text-align: center;
+  padding-top: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid #333;
+  color: #808080;
+  font-size: 0.9rem;
+`;
+
+export default Footer;

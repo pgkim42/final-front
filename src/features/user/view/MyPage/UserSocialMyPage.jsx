@@ -1,9 +1,10 @@
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
 import Modal from 'react-modal';
 import axios from 'axios';
+import { useApiHost } from '../../../../context/ApiHostContext';
 
 Modal.setAppElement('#root'); // Modal 접근성을 위한 설정
 
@@ -22,6 +23,7 @@ const UserSocialMyPage = () => {
     cancelAccount,
   } = useAuth(); // 변경된 AuthContext에서 각 필드를 가져옴
 
+  const { API_HOST } = useApiHost();
   const navigate = useNavigate();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // 비밀번호 확인 모달 상태
   const [isSocialRemoveModalOpen, setIsSocialRemoveModalOpen] = useState(false); // 소셜 회원탈퇴 모달 상태
@@ -96,7 +98,7 @@ const UserSocialMyPage = () => {
         return;
       }
 
-      const response = await fetch("http://localhost:8080/api/v1/check-password", {
+      const response = await fetch(`${API_HOST}/api/v1/check-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -130,7 +132,7 @@ const UserSocialMyPage = () => {
       }
 
       const endpoint = userType === "kakao" || userType === "naver" || userType === "company" || userType === "dev"
-        "http://localhost:8080/api/v1/social-remove" // 소셜 회원 탈퇴
+        `${API_HOST}/api/v1/social-remove` // 소셜 회원 탈퇴
 
       const requestBody = JSON.stringify({
         userId,
@@ -169,10 +171,10 @@ const UserSocialMyPage = () => {
   useEffect(() => {
     const userCode = localStorage.getItem("userCode");
     const token = localStorage.getItem("token"); // JWT 토큰 가져오기
-  
+
     if (userCode && token) {
       axios
-        .get(`http://localhost:8080/resume/count`, {
+        .get(`${API_HOST}/resume/count`, {
           params: { userCode },
           headers: {
             Authorization: `Bearer ${token}`, // Authorization 헤더 추가

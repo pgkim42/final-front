@@ -21,6 +21,7 @@ import {
   DevWrapper,
   QuillWrapper,
 } from "../../styles/ResumeStyles";
+import { useApiHost } from '../../context/ApiHostContext';
 
 const MODULES = {
   toolbar: [
@@ -57,6 +58,7 @@ const ResumeEdit = () => {
   const { resumeCode } = useParams();
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const { API_HOST } = useApiHost();
 
   const [board, setBoard] = useState({
     introduce: '',
@@ -77,7 +79,7 @@ const ResumeEdit = () => {
   useEffect(() => {
     const apiCall = async () => {
       try {
-        const response = await axios.get(`http://localhost:8080/resume/read/${resumeCode}`, {
+        const response = await axios.get(`${API_HOST}/resume/read/${resumeCode}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -177,7 +179,7 @@ const ResumeEdit = () => {
     }
     try {
       const response = await axios.patch(
-        `http://localhost:8080/resume/modify`,
+        `${API_HOST}/resume/modify`,
         formData,
         {
           headers: {

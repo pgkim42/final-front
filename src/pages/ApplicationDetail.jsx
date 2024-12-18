@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { useApiHost } from '../context/ApiHostContext';
 
 const STATUS_MAPPING = {
   'APPLIED': '지원완료',
@@ -19,12 +20,13 @@ const ApplicationDetail = () => {
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { API_HOST } = useApiHost();
 
   useEffect(() => {
     const fetchApplication = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:8080/apply/read/${id}`, {
+        const response = await axios.get(`${API_HOST}/apply/read/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setApplication(response.data);

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../../pages/AuthContent';
 import Modal from 'react-modal';
 import axios from 'axios';
+import { useApiHost } from '../../../../context/ApiHostContext';
 
 Modal.setAppElement('#root'); // Modal 접근성을 위한 설정
 
@@ -24,6 +25,8 @@ const UserMyPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const { API_HOST } = useApiHost();
+
   const userCode = localStorage.getItem('userCode');
   console.log(userCode);
 
@@ -37,7 +40,7 @@ const UserMyPage = () => {
       }
 
       try {
-        const response = await axios.get('http://localhost:8080/api/v1/auth/user-info', {
+        const response = await axios.get(`${API_HOST}/api/v1/auth/user-info`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -82,7 +85,7 @@ const UserMyPage = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:8080/api/v1/check-password',
+        `${API_HOST}/api/v1/check-password`,
         { password },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -132,7 +135,7 @@ const UserMyPage = () => {
     const fetchApplicationCount = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/apply/myApply', {
+        const response = await axios.get(`${API_HOST}/apply/myApply`, {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -171,7 +174,7 @@ const UserMyPage = () => {
 
     if (userCode && token) {
       axios
-        .get(`http://localhost:8080/resume/count`, {
+        .get(`${API_HOST}/resume/count`, {
           params: { userCode },
           headers: {
             Authorization: `Bearer ${token}`, // Authorization 헤더 추가
@@ -203,7 +206,7 @@ const UserMyPage = () => {
 
     if (userCode && token) {
       axios
-        .get(`http://localhost:8080/apply/applications/count`, {
+        .get(`${API_HOST}/apply/applications/count`, {
           params: { userCode },
           headers: { Authorization: `Bearer ${token}` },
         })

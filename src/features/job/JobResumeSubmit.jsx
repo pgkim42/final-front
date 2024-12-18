@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styled from 'styled-components';
 import axios from 'axios';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const JobResumeSubmit = () => {
   const { code } = useParams(); // URL의 code 파라미터 받기
@@ -14,6 +15,7 @@ const JobResumeSubmit = () => {
   const [modalMessage, setModalMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const { API_HOST } = useApiHost();
 
   const userCode = localStorage.getItem('userCode');
 
@@ -22,7 +24,7 @@ const JobResumeSubmit = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/resume/list', {
+        const response = await axios.get(`${API_HOST}/resume/list`, {
           headers: { 'Authorization': `Bearer ${token}` },
           params: { userCode }
         });
@@ -43,7 +45,7 @@ const JobResumeSubmit = () => {
       const token = localStorage.getItem('token');
 
       const response = await axios.post(
-        `http://localhost:8080/apply/applyto/${code}?resumeCode=${selectedResume}`,
+        `${API_HOST}/apply/applyto/${code}?resumeCode=${selectedResume}`,
         {},
         {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -77,7 +79,7 @@ const JobResumeSubmit = () => {
       setLoading(true);
       const token = localStorage.getItem('token');
       const response = await axios.post(
-        `http://localhost:8080/apply/applyto/${code}?resumeCode=${selectedResume}`,
+        `${API_HOST}/apply/applyto/${code}?resumeCode=${selectedResume}`,
         {},
         {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -89,7 +91,12 @@ const JobResumeSubmit = () => {
     } catch (err) {
       console.error('API Error:', err);
       setIsSuccess(false);
-      setModalMessage('지원에 실패했습니다.');
+
+      if (err.response && err.response.status === 409) {
+        setModalMessage('동일 공고에 중복 지원이 불가능합니다.');
+      } else {
+        setModalMessage('지원에 실패했습니다.');
+      }
       setShowModal(true);
     } finally {
       setLoading(false);

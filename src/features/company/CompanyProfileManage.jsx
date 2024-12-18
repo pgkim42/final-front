@@ -3,6 +3,7 @@ import styled from "styled-components";
 import CompanyLayout from "./CompanyLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useApiHost } from '../../context/ApiHostContext';
 
 const CompanyProfileManage = () => {
   const navigate = useNavigate();
@@ -22,6 +23,7 @@ const CompanyProfileManage = () => {
   const [isEditMode, setIsEditMode] = useState(false); // 수정/저장 모드 상태
   const [isLoading, setIsLoading] = useState(true); // 로딩 상태
   const [error, setError] = useState(null); // 에러 상태
+  const { API_HOST } = useApiHost();
 
   // 초기 데이터 로드
   useEffect(() => {
@@ -33,7 +35,7 @@ const CompanyProfileManage = () => {
 
         // 현재 회사 프로필 코드 가져오기
         const profileCodeResponse = await axios.get(
-          "http://localhost:8080/companyprofile/current",
+          `${API_HOST}/companyprofile/current`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -41,7 +43,7 @@ const CompanyProfileManage = () => {
 
         // 회사 프로필 데이터 가져오기
         const response = await axios.get(
-          `http://localhost:8080/companyprofile/read/${companyProfileCode}`,
+          `${API_HOST}/companyprofile/read/${companyProfileCode}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -86,7 +88,7 @@ const CompanyProfileManage = () => {
       console.log("수정 요청 데이터:", formData);
 
       const response = await axios.put(
-        "http://localhost:8080/companyprofile/modify",
+        `${API_HOST}/companyprofile/modify`,
         formData,
         {
           headers: {

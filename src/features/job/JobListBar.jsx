@@ -2,18 +2,20 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import styled from 'styled-components';
+import { useApiHost } from '../../context/ApiHostContext';
 
 const JobListBar = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { API_HOST } = useApiHost();
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await axios.get('http://localhost:8080/jobposting/list');
+        const response = await axios.get(`${API_HOST}/jobposting/list`);
         if (!response.data) throw new Error('데이터가 없습니다.');
 
         const reversedData = [...response.data].reverse().slice(0, 5);
