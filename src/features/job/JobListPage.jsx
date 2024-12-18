@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 const ITEMS_PER_PAGE = 9;
 
 const JobListPage = () => {
+  const [recommendedJobs, setRecommendedJobs] = useState([]); // 추천 공고 상태
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSkills, setSelectedSkills] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -17,6 +18,7 @@ const JobListPage = () => {
 
   useEffect(() => {
     fetchJobs();
+    fetchRecommendedJobs(1); // 예: 이력서 코드 1로 추천 공고 가져오기
   }, []);
 
   const fetchJobs = async () => {
@@ -46,6 +48,22 @@ const JobListPage = () => {
       console.error('Error fetching jobs:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRecommendedJobs = async (resumeCode) => {
+    try {
+      const response = await axios.get(`http://localhost:8080/similarposting/1`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          
+        },
+      });
+      if (response.status === 200) {
+        setRecommendedJobs(response.data.slice(0, 4)); // 상위 4개 공고만 저장
+      }
+    } catch (error) {
+      console.error("추천 공고 API 호출 실패:", error);
     }
   };
 
@@ -105,7 +123,6 @@ const JobListPage = () => {
   return (
     <Container>
       <Header>
-        <Title>채용 공고</Title>
         <SearchBar
           type="text"
           placeholder="직무, 회사, 지역 검색"
@@ -128,6 +145,49 @@ const JobListPage = () => {
         </SkillFilter>
       </FilterSection>
 
+      {/* 추천 공고 섹션 추가 */}
+    {recommendedJobs.length > 0 && (
+      <RecommendedSection>
+        <h2>Ai 추천 공고</h2>
+        <JobGrid>
+          {recommendedJobs.map(job => (
+            <HighlightedJobCard key={job.jobCode} disabled={!job.postingStatus}>
+              <Link to={`/jobs/${job.jobCode}`}>
+                {job.imageUrl && (
+                  <HighlightedThumbnail>
+                    <img src={job.imageUrl} alt="추천 공고 이미지" />
+                  </HighlightedThumbnail>
+                )}
+                <HighlightedJobInfo>
+                  <JobTitle>{job.title}</JobTitle>
+                  <Location>{job.address}</Location>
+                  <Salary>{job.salary}</Salary>
+                  <Experience>
+                    {job.workExperience === 0
+                      ? '신입'
+                      : job.workExperience === -1
+                        ? '경력무관'
+                        : `경력 ${job.workExperience}년`}
+                  </Experience>
+                  <SkillTags>
+                    {job.skill && job.skill.split(',').map((skill, index) => (
+                      <HighlightedSkillTag key={index}>{skill.trim()}</HighlightedSkillTag>
+                    ))}
+                  </SkillTags>
+                  <Deadline>
+                    마감일: {format(new Date(job.postingDeadline), 'yyyy-MM-dd')}
+                  </Deadline>
+                  {!job.postingStatus && (
+                    <div style={{ color: 'red', fontWeight: 'bold' }}>마감된 공고</div>
+                  )}
+                </HighlightedJobInfo>
+              </Link>
+            </HighlightedJobCard>
+          ))}
+        </JobGrid>
+      </RecommendedSection>
+    )}
+      <h2>구인 공고</h2>
       <JobGrid>
         {filteredJobs.length === 0 ? (
           <NoDataWrapper>검색 결과가 없습니다.</NoDataWrapper>
@@ -368,6 +428,62 @@ const Thumbnail = styled.div`
     height: 100%;
     object-fit: cover;
   }
+`;
+
+const RecommendedSection = styled.div`
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    border-left: 5px solid #3498db; /* 파란색 강조 */
+    padding-left: 0.5rem;
+  }
+`;
+
+const HighlightedJobCard = styled(JobCard)`
+  border: 2px solid #3498db; /* 파란색 테두리 */
+  background-color: #f0f8ff; /* 파란색 톤의 배경 */
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.2); /* 파란색 그림자 효과 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px); /* 살짝 올라가는 효과 */
+    box-shadow: 0 6px 12px rgba(52, 152, 219, 0.4); /* 강조된 그림자 */
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    padding: 1.5rem;
+  }
+`;
+
+const HighlightedThumbnail = styled(Thumbnail)`
+  img {
+    border-bottom: 2px solid #3498db; /* 이미지 하단에 파란색 강조 */
+  }
+`;
+
+const HighlightedJobInfo = styled(JobInfo)`
+  h3 {
+    color: #2c3e50; /* 제목 색상 */
+    font-weight: bold;
+    font-size: 1.25rem;
+  }
+
+  span {
+    font-size: 0.9rem;
+    color: #4a5568; /* 약간 어두운 텍스트 색상 */
+  }
+`;
+
+const HighlightedSkillTag = styled(SkillTag)`
+  background: #3498db; /* 파란색 배경 */
+  color: white; /* 텍스트 색상 */
+  font-weight: bold;
 `;
 
 export default JobListPage;
