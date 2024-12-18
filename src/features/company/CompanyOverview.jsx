@@ -74,7 +74,6 @@ const CompanyOverview = () => {
 
   const fetchJob = async () => {
     const token = localStorage.getItem('token'); // 로컬 스토리지에서 토큰 가져오기
-    const userCode = localStorage.getItem('userCode');
     try {
       setLoading(true);
       setError(null);
@@ -85,7 +84,7 @@ const CompanyOverview = () => {
           Authorization: `Bearer ${token}` // Bearer 토큰 추가
         },
         params: {
-          userCode: userCode // Query Parameter 추가
+          companyProfileCode: companyProfileCode // Query Parameter 추가
         }
       });      
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import CompanyLayout from "./CompanyLayout";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import axios from 'axios';
@@ -18,6 +18,7 @@ const CompanyJobManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [filteredJobs, setFilteredJobs] = useState([]);
+
 
   useEffect(() => {
     fetchJob();
@@ -42,8 +43,10 @@ const CompanyJobManagement = () => {
       setLoading(true);
       setError(null);
 
+      
+
       // Authorization 헤더 추가
-      const response = await axios.get("http://localhost:8080/companyprofile/by-user", {
+      const response = await axios.get("http://localhost:8080/companyprofile/by-company", {
         headers: {
           Authorization: `Bearer ${token}` // Bearer 토큰 추가
         },
