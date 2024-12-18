@@ -239,24 +239,7 @@ const CompanyOverview = () => {
 
       {/* 채용 대시보드 */}
 
-        <StatsGrid>
-          <StatCard>
-            <StatLabel>총 지원자</StatLabel>
-            <StatValue>{applyStats.totalApplications}</StatValue>
-          </StatCard>
-          <StatCard>
-            <StatLabel>진행중인 공고</StatLabel>
-            <StatValue>{applyStats.activeJobs}</StatValue>
-          </StatCard>
-          <StatCard>
-            <StatLabel>면접 예정</StatLabel>
-            <StatValue>{applyStats.interviewScheduled}</StatValue>
-          </StatCard>
-          <StatCard>
-            <StatLabel>채용 완료</StatLabel>
-            <StatValue>{applyStats.hiredCandidates}</StatValue>
-          </StatCard>
-        </StatsGrid>
+        
         
           <ChartGrid>
             <ChartCard>
