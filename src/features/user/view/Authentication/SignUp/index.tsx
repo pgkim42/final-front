@@ -456,7 +456,7 @@ export default function SignUp() {
       <SignUpContainer className='sign-up-container'>
         <SignUpBox className='sign-up-box'>
           <SignUpTitle className='sign-up-title'>
-            {!isCompany ? '회원가입 서비스' : '기업 회원가입 서비스'}
+            {!isCompany ? '개인 회원가입' : '기업 회원가입'}
           </SignUpTitle>
           <SignUpContentBox className='sign-up-content-box'>
             {!isCompany && (

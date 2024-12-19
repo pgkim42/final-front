@@ -125,7 +125,7 @@ export default function SignIn() {
       <div className="sign-in-image"></div>
       <div className="sign-in-container">
         <div className="sign-in-box">
-          <div className="sign-in-title">{'아무개 서비스'}</div>
+          <div className="sign-in-title">{'DEVjOBS 로그인'}</div>
           <div className="sign-in-content-box">
             <div className="sign-in-content-input-box">
               <InputBox
