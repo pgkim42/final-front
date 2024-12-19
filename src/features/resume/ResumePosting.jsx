@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import styled from "styled-components";
 import ReactQuill from "react-quill";
@@ -13,7 +13,6 @@ import {
   FormGroup,
   Input,
   Button,
-  Label,
   FullWidthWrapper,
   DevSection,
   AddButtonLarger,
@@ -22,10 +21,20 @@ import {
   QuillWrapper,
 } from "../../styles/ResumeStyles";
 import { useApiHost } from '../../context/ApiHostContext';
+import { useAuth } from '../../pages/AuthContent'
 
-const name = localStorage.getItem("name"); // 로컬 스토리지에 name이 없으면 null 또는 undefined가 반환
+// const name = localStorage.getItem("name"); // 로컬 스토리지에 name이 없으면 null 또는 undefined가 반환
 
 const ResumePosting = ({ onSubmit }) => {
+
+  const { name } = useAuth();
+  const [placeholder, setPlaceholder] = useState('새로운 이력서');
+
+  useEffect(() => {
+    if (name) {
+      setPlaceholder(`${name}님의 이력서`);
+    }
+  }, [name]);
 
   const { API_HOST } = useApiHost();
 
@@ -133,7 +142,8 @@ const ResumePosting = ({ onSubmit }) => {
               type="text"
               value={work}
               onChange={(e) => setWork(e.target.value)}
-              placeholder={`${name}님의 이력서`} // 동적 placeholder
+              // placeholder={`${name}님의 이력서`} 
+              placeholder={placeholder}
             />
           </FullWidthWrapper>
         </FormGroup>
