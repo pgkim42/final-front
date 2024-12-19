@@ -111,6 +111,12 @@ const MODULES = {
   ],
 };
 
+const getOneWeekLater = () => {
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+  return date.toISOString().slice(0, 16);
+};
+
 const JobPosting = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -124,7 +130,7 @@ const JobPosting = () => {
     workExperience: '',
     tag: '',
     jobCategory: 'IT/개발',
-    postingDeadline: '',
+    postingDeadline: getOneWeekLater(), // 일주일 뒤로 기본값 설정
     companyProfileCode: null, // 초기값 null
     skill: '',
     address: '',
@@ -215,6 +221,12 @@ const JobPosting = () => {
       ...prev,
       content: value,
     }));
+  };
+
+  const addDays = (currentDeadline, daysToAdd) => {
+    const currentDate = new Date(currentDeadline);
+    currentDate.setDate(currentDate.getDate() + daysToAdd);
+    return currentDate.toISOString().slice(0, 16);
   };
 
   return (
@@ -315,6 +327,35 @@ const JobPosting = () => {
               onChange={handleChange}
               min={new Date().toISOString().slice(0, 16)}
             />
+            <ButtonGroup>
+              <DateButton
+                type="button"
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  postingDeadline: addDays(prev.postingDeadline, 1)
+                }))}
+              >
+                +1일
+              </DateButton>
+              <DateButton
+                type="button"
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  postingDeadline: addDays(prev.postingDeadline, 3)
+                }))}
+              >
+                +3일
+              </DateButton>
+              <DateButton
+                type="button"
+                onClick={() => setFormData(prev => ({
+                  ...prev,
+                  postingDeadline: addDays(prev.postingDeadline, 7)
+                }))}
+              >
+                +7일
+              </DateButton>
+            </ButtonGroup>
           </FormGroup>
 
           <FormGroup>
@@ -371,5 +412,23 @@ const JobPosting = () => {
     </>
   );
 };
+
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+`;
+
+const DateButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  background: #f9fafb;
+  cursor: pointer;
+  
+  &:hover {
+    background: #f3f4f6;
+  }
+`;
 
 export default JobPosting;
