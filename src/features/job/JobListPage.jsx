@@ -193,6 +193,7 @@ const JobListPage = () => {
               <Link to={`/jobs/${job.jobCode}`}>
                 {job.imageUrl && (
                   <Thumbnail>
+                    {job.imageUrl}
                     <img src={job.imageUrl} alt="공고 이미지" />
                   </Thumbnail>
                 )}
