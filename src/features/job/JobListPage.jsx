@@ -35,7 +35,7 @@ const JobListPage = () => {
 
       const jobsWithImage = reversedData.map(job => ({
         ...job,
-        imageUrl: job.imgPath ? `${API_HOST}${job.imgPath}` : null
+        imageUrl: job.imgPath ? `${job.imgPath}` : null
       }));
 
       setJobs(jobsWithImage);
@@ -193,7 +193,6 @@ const JobListPage = () => {
               <Link to={`/jobs/${job.jobCode}`}>
                 {job.imageUrl && (
                   <Thumbnail>
-                    {job.imageUrl}
                     <img src={job.imageUrl} alt="공고 이미지" />
                   </Thumbnail>
                 )}
