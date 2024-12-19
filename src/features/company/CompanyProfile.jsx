@@ -100,7 +100,7 @@ const CompanyProfile = () => {
       formData.append("logo", file);
       formData.append("companyProfileCode", companyProfileCode); // 회사 프로필 코드 전달
 
-      const response = await axios.post("http://localhost:8080/companyprofile/logo", formData, {
+      const response = await axios.post(`${API_HOST}/companyprofile/logo`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
