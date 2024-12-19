@@ -20,9 +20,26 @@ const Nav = styled.nav`
 `;
 
 const Logo = styled.div`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #2563eb;
+  @keyframes heartbeat {
+    0% {
+      transform: scale(1);
+    }
+    30% {
+      transform: scale(1.2);
+    }
+    60% {
+      transform: scale(1);
+    }
+    100% {
+      transform: scale(1);
+    }
+  }
+
+  &:hover {
+    img {
+      animation: heartbeat 0.8s ease-in-out;
+    }
+  }
 `;
 
 const NavList = styled.ul`
@@ -124,7 +141,17 @@ const Header = () => {
     <HeaderContainer>
       <Nav>
         <Logo>
-          <StyledNavLink to="/">DevJobs</StyledNavLink>
+          <StyledNavLink to="/">
+            <img
+              src="/devjobs_logo.png"
+              alt="DevJobs Logo"
+              style={{
+                width: "100px",
+                display: "flex",
+                alignItems: "center",
+              }}
+            />
+          </StyledNavLink>
         </Logo>
 
         <NavList>
