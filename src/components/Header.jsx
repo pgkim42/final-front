@@ -172,30 +172,32 @@ const Header = () => {
             </SubMenu>
           </NavItem>
 
-          {userType !== "company" && (
-            <NavItem>
-              이력서
-              <SubMenu>
-                <SubMenuItem>
-                  <StyledNavLink to="/resumes/post">이력서 등록</StyledNavLink>
-                </SubMenuItem>
-                {/* <SubMenuItem>
+          {(userType === "dev" ||
+            userType === "kakao" ||
+            userType === "naver") && (
+              <NavItem>
+                이력서
+                <SubMenu>
+                  <SubMenuItem>
+                    <StyledNavLink to="/resumes/post">이력서 등록</StyledNavLink>
+                  </SubMenuItem>
+                  {/* <SubMenuItem>
                 <StyledNavLink to="/ResumeRead">이력서 조회</StyledNavLink>
                 <StyledNavLink to="/resumes/read">이력서 조회 테스트</StyledNavLink>
               </SubMenuItem> */}
-                {/* <SubMenuItem>
+                  {/* <SubMenuItem>
                 <StyledNavLink to="/ResumeEdit">이력서 수정</StyledNavLink>
                 <StyledNavLink to="/resumes/edit">이력서 수정 테스트</StyledNavLink>
               </SubMenuItem> */}
-                <SubMenuItem>
-                  <StyledNavLink to="/resumes/list">이력서 목록</StyledNavLink>
-                </SubMenuItem>
-                {/* <SubMenuItem>
+                  <SubMenuItem>
+                    <StyledNavLink to="/resumes/list">이력서 목록</StyledNavLink>
+                  </SubMenuItem>
+                  {/* <SubMenuItem>
                 <StyledNavLink to="/TestResume">이력서 API 테스트</StyledNavLink>
               </SubMenuItem> */}
-              </SubMenu>
-            </NavItem>
-          )}
+                </SubMenu>
+              </NavItem>
+            )}
 
           {/* <NavItem>
             Member
@@ -207,25 +209,43 @@ const Header = () => {
             </SubMenu>
           </NavItem> */}
 
-          <NavItem>
-            페이지
-            <SubMenu>
-              <SubMenuItem>
-                <StyledNavLink to="/profile/applications">공고 지원 관리</StyledNavLink>
-              </SubMenuItem>
-              {/* <SubMenuItem>
+          {(userType === "dev" ||
+            userType === "kakao" ||
+            userType === "naver") && (
+              <NavItem>
+                페이지
+
+                <SubMenu>
+
+                  <SubMenuItem>
+                    <StyledNavLink to="/profile/applications">공고 지원 관리</StyledNavLink>
+                  </SubMenuItem>
+
+                  {/* <SubMenuItem>
                 <StyledNavLink to="/profile">구직자 마이페이지</StyledNavLink>
               </SubMenuItem>
               <SubMenuItem>
                 <StyledNavLink to="/company_test">회사정보 테스트페이지</StyledNavLink>
               </SubMenuItem> */}
-              {userType === "admin" && (
+                  {userType === "admin" && (
+                    <SubMenuItem>
+                      <StyledNavLink to="/admin">관리자 메인 페이지</StyledNavLink>
+                    </SubMenuItem>
+                  )}
+                </SubMenu>
+              </NavItem>
+            )}
+          {userType === "admin" && (
+            <NavItem>
+              관리자 페이지
+              <SubMenu>
                 <SubMenuItem>
                   <StyledNavLink to="/admin">관리자 메인 페이지</StyledNavLink>
                 </SubMenuItem>
-              )}
-            </SubMenu>
-          </NavItem>
+              </SubMenu>
+            </NavItem>
+          )}
+
 
           {userType === "company" && (
             <>
